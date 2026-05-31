@@ -9,7 +9,6 @@ const isDevCommand = process.argv.includes('dev');
 // https://astro.build/config
 export default defineConfig({
   site: 'https://madrinhadosono.online',
-  base: '/app-extrator',
   output: 'server',
   adapter: isDevCommand ? node({ mode: 'standalone' }) : cloudflare(),
 });

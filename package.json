@@ -12,13 +12,21 @@
     "dev:tunnel": "sh -c 'npm run dev:local & DEV_PID=$!; trap \"kill $DEV_PID\" EXIT INT TERM; cloudflared tunnel --config cloudflared/config.yml run app-extrator'",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "setup:oauth": "node setup-oauth.mjs",
+    "generate-types": "wrangler types"
   },
   "dependencies": {
+    "@astrojs/cloudflare": "^13.6.0",
     "@astrojs/node": "^10.1.1",
-    "astro": "^6.3.8"
+    "astro": "^6.3.8",
+    "axios": "^1.7.7",
+    "wrangler": "^4.95.0"
   },
   "devDependencies": {
     "puppeteer": "^25.1.0"
+  },
+  "overrides": {
+    "vite": "^7"
   }
 }
