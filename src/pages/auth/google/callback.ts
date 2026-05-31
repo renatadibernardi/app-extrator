@@ -20,7 +20,7 @@ export const GET: APIRoute = async ({ request, cookies }) => {
   let returnTo = withAppBase('/doc-md');
 
   if (!error && !code && !state) {
-    return Response.redirect(new URL(`${returnTo}?googleLogin=start-required`, request.url).toString(), 302);
+    return Response.redirect(new URL(`${withAppBase('/auth/google/start')}?returnTo=${encodeURIComponent(returnTo)}`, request.url).toString(), 302);
   }
 
   const stateCookie = await verifySignedValue(cookies.get(GOOGLE_OAUTH_STATE_COOKIE)?.value);
