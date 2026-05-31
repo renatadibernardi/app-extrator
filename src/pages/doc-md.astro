@@ -399,6 +399,37 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
       }
       .live-title { font-size: 12px; color: #d8ebff; font-weight: 700; }
       .live-sub { margin-top: 4px; font-size: 12px; color: #b5c6e4; }
+      .drive-mirror-list {
+        display: grid;
+        gap: 8px;
+        margin-top: 12px;
+      }
+      .drive-mirror-item {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: rgba(5, 11, 26, 0.58);
+        color: #eaf1ff;
+        cursor: pointer;
+        display: grid;
+        gap: 2px;
+        padding: 10px 12px;
+        text-align: left;
+      }
+      .drive-mirror-item:hover {
+        border-color: rgba(126, 203, 255, 0.55);
+        background: rgba(126, 203, 255, 0.12);
+      }
+      .drive-mirror-name {
+        color: #edf4ff;
+        font-size: 13px;
+        font-weight: 700;
+        word-break: break-word;
+      }
+      .drive-mirror-meta {
+        color: var(--muted);
+        font-size: 11px;
+      }
 
       /* Organic Vitality theme override */
       :root {
@@ -430,6 +461,7 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
       .side-note,
       .drop,
       .queue-item,
+      .drive-mirror-item,
       .viewer-content,
       .file-sheet {
         background: var(--panel);
@@ -444,7 +476,8 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
       .drop,
       .file-sheet,
       .viewer-content,
-      .queue-item {
+      .queue-item,
+      .drive-mirror-item {
         border: 0;
         box-shadow: 0 8px 24px rgba(162, 103, 82, 0.08);
       }
@@ -452,7 +485,9 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
       .card { background: #f6ece3; }
       .drop { background: #fbf2e8; }
       .queue-item { background: #fff8f3; }
+      .drive-mirror-item { background: #fff8f3; }
       .queue-item:hover { background: #f0e7dd; }
+      .drive-mirror-item:hover { background: #f0e7dd; }
       .queue-item.processing {
         background: #ebe1cf;
         box-shadow: 0 8px 24px rgba(162, 103, 82, 0.1);
@@ -486,6 +521,7 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
       .queue p,
       .viewer p,
       .drop p,
+      .drive-mirror-meta,
       .sheet-label,
       .live-sub {
         color: var(--muted);
@@ -810,6 +846,13 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
               <div id="queueEmpty" class="empty">A fila está vazia. Carrega ficheiros para começar a clonar os fluxos do portal.</div>
               <div id="queueList" class="queue-list" hidden></div>
             </section>
+
+            <section class="card queue">
+              <h3>Espelho do Drive</h3>
+              <p id="driveMirrorStatus">Conecte o Google para espelhar aqui as pastas e arquivos da pasta principal.</p>
+              <div id="driveMirrorEmpty" class="empty">Drive ainda não conectado.</div>
+              <div id="driveMirrorList" class="drive-mirror-list" hidden></div>
+            </section>
           </div>
 
           <section class="card viewer">
@@ -860,6 +903,9 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
       const clearBtn = document.getElementById('clearBtn');
       const queueEmpty = document.getElementById('queueEmpty');
       const queueList = document.getElementById('queueList');
+      const driveMirrorStatus = document.getElementById('driveMirrorStatus');
+      const driveMirrorEmpty = document.getElementById('driveMirrorEmpty');
+      const driveMirrorList = document.getElementById('driveMirrorList');
       const countQueue = document.getElementById('countQueue');
       const countDone = document.getElementById('countDone');
       const countError = document.getElementById('countError');
@@ -923,6 +969,16 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
         if (viewerStatus) {
           viewerStatus.textContent = message;
         }
+      }
+
+      function escapeHtml(value) {
+        return String(value || '').replace(/[&<>"']/g, (char) => ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#39;',
+        }[char]));
       }
 
       function setAuthState(nextAccessToken, nextUserLabel = '') {
@@ -1085,6 +1141,64 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
         }
       }
 
+      function renderDriveMirror(folders = [], files = []) {
+        const entries = [
+          ...folders.map((item) => ({ ...item, kind: 'folder' })),
+          ...files.map((item) => ({ ...item, kind: 'file' })),
+        ];
+
+        if (driveMirrorList) {
+          driveMirrorList.hidden = entries.length === 0;
+          driveMirrorList.innerHTML = entries.map((item) => {
+            const label = item.kind === 'folder' ? 'Pasta' : 'Arquivo';
+            const icon = item.kind === 'folder' ? 'Pasta' : 'Arquivo';
+            const size = item.size ? ` · ${Math.max(1, Math.round(Number(item.size) / 1024))} KB` : '';
+            return `
+              <button class="drive-mirror-item" type="button" data-kind="${escapeHtml(item.kind)}" data-id="${escapeHtml(item.id)}" data-name="${escapeHtml(item.name)}" data-url="${escapeHtml(item.webViewLink)}">
+                <span class="drive-mirror-name">${icon}: ${escapeHtml(item.name || 'sem nome')}</span>
+                <span class="drive-mirror-meta">${label}${escapeHtml(size)}</span>
+              </button>
+            `;
+          }).join('');
+        }
+
+        if (driveMirrorEmpty) {
+          driveMirrorEmpty.hidden = entries.length > 0;
+          driveMirrorEmpty.textContent = googleAccessToken
+            ? 'A pasta do Drive está vazia.'
+            : 'Drive ainda não conectado.';
+        }
+
+        if (driveMirrorStatus) {
+          driveMirrorStatus.textContent = googleAccessToken
+            ? `${folders.length} pasta(s) e ${files.length} arquivo(s) na pasta principal.`
+            : 'Conecte o Google para espelhar aqui as pastas e arquivos da pasta principal.';
+        }
+      }
+
+      async function refreshDriveMirror() {
+        if (!googleAccessToken) {
+          renderDriveMirror();
+          return;
+        }
+
+        if (driveMirrorStatus) {
+          driveMirrorStatus.textContent = 'Carregando conteúdo do Drive...';
+        }
+
+        try {
+          const rootData = await fetchDriveFolderChildren(DRIVE_ROOT_ID);
+          const folders = Array.isArray(rootData.folders) ? rootData.folders : [];
+          const files = Array.isArray(rootData.files) ? rootData.files : [];
+          renderDriveMirror(folders, files);
+        } catch (error) {
+          if (driveMirrorStatus) {
+            driveMirrorStatus.textContent = error instanceof Error ? error.message : 'Falha ao espelhar o Drive.';
+          }
+          renderDriveMirror();
+        }
+      }
+
       function renderDriveState() {
         if (driveFolderChip) {
           driveFolderChip.textContent = googleAuthLoading
@@ -1145,12 +1259,14 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
           if (data?.authenticated) {
             await resolveDriveFolder(currentFolder, true);
             await refreshDestinationFoldersFromDrive();
+            await refreshDriveMirror();
             if (loginState === 'success') {
               await syncPendingDriveUploads();
               window.history.replaceState({}, '', appUrl('/doc-md'));
             }
           } else {
             renderDestinationFolders([], currentFolder);
+            renderDriveMirror();
             if (loginState === 'start-required') {
               setStatus('Clique em Conectar Google para autorizar o Drive.');
             }
@@ -1158,6 +1274,7 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
         } catch {
           setAuthState('', '');
           renderDestinationFolders([], currentFolder);
+          renderDriveMirror();
         } finally {
           googleAuthLoading = false;
           renderAuthState();
@@ -1577,6 +1694,7 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
                   item.driveFile = driveFile;
                   item.cloudError = `Sincronizado no Drive em ${DRIVE_ROOT_NAME}/${currentFolder}`;
                   saveWorkState();
+                  void refreshDriveMirror();
                 } catch (error) {
                   item.cloudError = error instanceof Error ? error.message : 'Falha ao enviar para o Google Drive.';
                   errors += 1;
@@ -1703,6 +1821,7 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
           const createdName = data.folder?.name || folderName;
           currentFolder = createdName;
           await refreshDestinationFoldersFromDrive();
+          await refreshDriveMirror();
           if (destinoSelect) destinoSelect.value = createdName;
           if (destinoAtual) destinoAtual.textContent = currentFolder;
           updateDriveDestinationLabel();
@@ -1747,6 +1866,7 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
               active.driveFile = driveFile;
               active.cloudError = `Sincronizado no Drive em ${DRIVE_ROOT_NAME}/${currentFolder}`;
               saveWorkState();
+              void refreshDriveMirror();
               alert(`Alterações salvas em drive/md/${currentFolder}/${mdName} e enviadas para o Google Drive.`);
             } catch (error) {
               const message = error instanceof Error ? error.message : 'Erro desconhecido.';
@@ -1764,8 +1884,30 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
         await openCurrentDriveFolder();
       });
 
+      driveMirrorList?.addEventListener('click', async (event) => {
+        const target = event.target.closest('.drive-mirror-item');
+        if (!target) return;
+        const kind = target.getAttribute('data-kind') || '';
+        const name = target.getAttribute('data-name') || '';
+        const url = target.getAttribute('data-url') || '';
+
+        if (kind === 'folder') {
+          selectDestinationFolder(name);
+          saveWorkState();
+          if (googleAccessToken) {
+            void resolveDriveFolder(currentFolder, true);
+          }
+          return;
+        }
+
+        if (url) {
+          window.open(url, '_blank', 'noopener');
+        }
+      });
+
       const restoredWork = restoreWorkState();
       renderDestinationFolders([], currentFolder);
+      renderDriveMirror();
       updateDriveDestinationLabel();
       refreshAuthState();
       renderQueue();
