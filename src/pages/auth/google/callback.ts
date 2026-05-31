@@ -19,7 +19,7 @@ export const GET: APIRoute = async ({ request, cookies }) => {
   const state = url.searchParams.get('state');
 
   const stateCookie = verifySignedValue(cookies.get(GOOGLE_OAUTH_STATE_COOKIE)?.value);
-  let returnTo = '/extrator';
+  let returnTo = '/doc-md';
 
   if (stateCookie) {
     try {

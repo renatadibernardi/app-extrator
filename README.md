@@ -5,7 +5,7 @@ Aplicação Astro focada no fluxo `extrator` e nas integrações com Google Driv
 ## O que este repositório contém
 
 - interface web para extração e organização de documentos
-- rotas `doc-md` e `extrator`
+- rota principal `doc-md` para o fluxo do extrator
 - OAuth Google para autenticação e acesso ao Drive
 - salvamento local em `drive/` e sessão em `.data/`
 

@@ -123,7 +123,7 @@ export async function fetchGoogleProfile(accessToken: string) {
 export function sanitizeReturnTo(value: string | null | undefined): string {
   const candidate = String(value || '').trim();
   if (!candidate.startsWith('/')) {
-    return '/extrator';
+    return '/doc-md';
   }
   return candidate;
 }
