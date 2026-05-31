@@ -15,7 +15,6 @@
         --muted: #95a2be;
         --brand: #7ecbff;
         --brand-2: #9b7cff;
-        --card-dark: #0d1328;
       }
 
       * { box-sizing: border-box; }
@@ -74,14 +73,6 @@
         margin-bottom: 18px;
       }
 
-      .brand img {
-        width: 44px;
-        height: 44px;
-        border-radius: 11px;
-        background: #0a0f22;
-        padding: 6px;
-      }
-
       .brand h1 {
         margin: 0;
         font-size: 1.35rem;
@@ -136,9 +127,7 @@
         border-color: rgba(126, 203, 255, 0.4);
       }
 
-      .btn:hover {
-        transform: translateY(-1px);
-      }
+      .btn:hover { transform: translateY(-1px); }
 
       .footnote {
         margin-top: 14px;
@@ -152,14 +141,13 @@
   <body>
     <main>
       <div class="brand">
-        <img src="/brand/ncs-studio-mark.svg" alt="NCS Studio" onerror="this.style.display='none'">
         <h1>App Extrator</h1>
       </div>
       <div class="title">Página principal</div>
       <p>Escolha o ponto de entrada da aplicação para acessar o fluxo de extração e o extrato de documentos de forma rápida.</p>
       <div class="actions">
-        <a class="btn btn-primary" href="/app-extrator/doc-md">Abrir extrator</a>
-        <a class="btn btn-secondary" href="/app-extrator">Página inicial do app</a>
+        <a class="btn btn-primary" href="/doc-md">Abrir extrator</a>
+        <a class="btn btn-secondary" href="/">Página inicial do app</a>
       </div>
       <div class="footnote">Domínio de produção: <strong>madrinhadosono.online</strong></div>
     </main>
