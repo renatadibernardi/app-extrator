@@ -11,7 +11,7 @@
     "tunnel": "cloudflared tunnel --config cloudflared/config.yml run app-extrator",
     "dev:tunnel": "sh -c 'npm run dev:local & DEV_PID=$!; trap \"kill $DEV_PID\" EXIT INT TERM; cloudflared tunnel --config cloudflared/config.yml run app-extrator'",
     "build": "astro build",
-    "postbuild": "cp -R dist/client/. dist/",
+    "postbuild": "node scripts/prepare-pages-output.mjs",
     "preview": "astro preview",
     "astro": "astro",
     "setup:oauth": "node setup-oauth.mjs",
