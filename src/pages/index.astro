@@ -157,16 +157,15 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
   <body>
     <main>
       <div class="brand">
-        <img src={appUrl('/brand/ncs-studio-mark.svg')} alt="NCS Studio" onerror="this.style.display='none'" />
         <h1>App Extrator</h1>
       </div>
-      <div class="title">Pagina principal</div>
-      <p>Escolha o ponto de entrada da aplicacao para acessar o fluxo de extracao e gestao de documentos de forma rapida.</p>
+      <div class="title">Página principal</div>
+      <p>Escolha o ponto de entrada da aplicação para acessar o fluxo de extração e o extrato de documentos de forma rápida.</p>
       <div class="actions">
         <a class="btn btn-primary" href={appUrl('/doc-md')}>Abrir extrator</a>
-        <a class="btn btn-secondary" href={appUrl('/proposta')}>Ver proposta</a>
+        <a class="btn btn-secondary" href={appUrl('/')}>Página inicial do app</a>
       </div>
-      <div class="footnote">Dominio de producao: <strong>madrinhadosono.online</strong></div>
+      <div class="footnote">Domínio de produção: <strong>madrinhadosono.online</strong></div>
     </main>
   </body>
 </html>
