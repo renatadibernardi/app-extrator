@@ -1,10 +1,13 @@
 import type { APIRoute } from 'astro';
 import { createDriveFolder } from '../../../lib/google-drive';
 import { GOOGLE_SESSION_COOKIE, verifySignedValue } from '../../../lib/google-session';
+import { setGoogleRuntimeEnv } from '../../../lib/runtime-env';
 
 export const prerender = false;
 
-export const POST: APIRoute = async ({ request, cookies }) => {
+export const POST: APIRoute = async ({ request, cookies, locals }) => {
+  setGoogleRuntimeEnv(locals);
+
   const sessionId = await verifySignedValue(cookies.get(GOOGLE_SESSION_COOKIE)?.value);
   if (!sessionId) {
     return new Response(JSON.stringify({ ok: false, error: 'Faça login com o Google para criar pasta no Drive.' }), {

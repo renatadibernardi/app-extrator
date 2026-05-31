@@ -1,5 +1,3 @@
-import { env as cloudflareEnv } from 'cloudflare:workers';
-
 export const GOOGLE_SESSION_COOKIE = 'ncs_google_session';
 export const GOOGLE_OAUTH_STATE_COOKIE = 'ncs_google_oauth_state';
 
@@ -24,8 +22,6 @@ function getSecret(): string {
   return (
     runtimeEnv.GOOGLE_SESSION_SECRET ||
     runtimeEnv.SESSION_SECRET ||
-    cloudflareEnv.GOOGLE_SESSION_SECRET ||
-    cloudflareEnv.SESSION_SECRET ||
     globalThis.process?.env?.GOOGLE_SESSION_SECRET ||
     globalThis.process?.env?.SESSION_SECRET ||
     env.GOOGLE_SESSION_SECRET ||

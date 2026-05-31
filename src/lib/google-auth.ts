@@ -1,5 +1,3 @@
-import { env as cloudflareEnv } from 'cloudflare:workers';
-
 export const GOOGLE_AUTHORIZATION_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 export const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 export const GOOGLE_USERINFO_URL = 'https://www.googleapis.com/oauth2/v2/userinfo';
@@ -21,7 +19,7 @@ export function setGoogleAuthEnv(env: Record<string, string | undefined> | undef
 
 function getEnvVariable(name: string): string {
   const env = import.meta.env as Record<string, string | undefined>;
-  return runtimeEnv[name] || cloudflareEnv[name] || globalThis.process?.env?.[name] || env[name] || '';
+  return runtimeEnv[name] || globalThis.process?.env?.[name] || env[name] || '';
 }
 
 export function getGoogleOAuthClientId(): string {
