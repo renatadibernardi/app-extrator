@@ -2,6 +2,7 @@
 export const prerender = true;
 
 const GOOGLE_OAUTH_CLIENT_ID = import.meta.env.PUBLIC_GOOGLE_OAUTH_CLIENT_ID || '';
+const EXTRATOR_API_URL = import.meta.env.PUBLIC_EXTRATOR_API_URL || '';
 const BASE_PATH = import.meta.env.BASE_URL.replace(/\/$/, '');
 const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
 ---
@@ -487,7 +488,7 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
         </div>
       </div>
     </div>
-    <script define:vars={{ GOOGLE_OAUTH_CLIENT_ID, BASE_PATH }}>
+    <script define:vars={{ GOOGLE_OAUTH_CLIENT_ID, EXTRATOR_API_URL, BASE_PATH }}>
       const fileInput = document.getElementById('fileInput');
       const selectBtn = document.getElementById('selectBtn');
       const startBtn = document.getElementById('startBtn');
@@ -530,6 +531,10 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
       const DRIVE_ROOT_NAME = 'Espelho Documentos';
       const DRIVE_FOLDER_BASE_URL = 'https://drive.google.com/drive/folders/';
       const appUrl = (pathname) => `${BASE_PATH}${pathname}`;
+      const apiUrl = (pathname) => {
+        const base = String(EXTRATOR_API_URL || '').replace(/\/$/, '');
+        return base ? `${base}${pathname}` : appUrl(pathname);
+      };
       const AUTH_STATUS_URL = appUrl('/api/auth/google/status');
       const AUTH_LOGOUT_URL = appUrl('/api/auth/google/logout');
       const AUTH_START_URL = `${appUrl('/auth/google/start')}?returnTo=${encodeURIComponent(appUrl('/doc-md'))}`;
@@ -1074,7 +1079,7 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
           beginProgress(item);
 
           try {
-            const response = await fetch(appUrl('/api/extrator-process'), {
+            const response = await fetch(apiUrl('/api/extrator-process'), {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/octet-stream',
