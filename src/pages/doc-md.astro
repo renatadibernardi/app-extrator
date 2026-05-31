@@ -43,22 +43,32 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
       .menu { margin-top: 18px; display: grid; gap: 4px; }
       .menu a { text-decoration: none; color: #3d4d3f; font-size: 13px; padding: 10px; border-radius: 12px; }
       .menu a.active { background: #dfe8da; color: #1b4a29; font-weight: 700; }
-      .destino { margin-top: 14px; }
+      .destino {
+        margin-top: 14px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: #f8f8f5;
+        padding: 10px;
+      }
+      .destino-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+      .destino-head .label { margin-bottom: 0; }
+      .destino-action {
+        border: 1px solid #cbd8c6;
+        border-radius: 8px;
+        background: #fff;
+        color: #1f5a2e;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 6px 8px;
+      }
       .label { font-size: 10px; font-weight: 700; letter-spacing: .08em; color: #3e6543; margin-bottom: 6px; }
-      .path-hint {
-        font-size: 11px;
-        color: #5e695c;
-        margin-top: 6px;
-        line-height: 1.35;
-      }
-      .path-hint code {
-        background: #f3f6f1;
-        border: 1px solid #d8dfd1;
-        border-radius: 6px;
-        padding: 1px 5px;
-        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-        font-size: 11px;
-      }
       select {
         width: 100%; padding: 10px; border: 1px solid var(--line); border-radius: 10px; background: #fff;
         font-size: 13px; color: #3a4939;
@@ -367,15 +377,13 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
           <a href={appUrl('/doc-md')}>Extração OCR</a>
         </nav>
         <div class="destino">
-          <div class="label">PASTA DE DESTINO</div>
-          <select id="destinoSelect">
-            <option value="" selected disabled>Carregando pastas do Drive...</option>
-          </select>
-          <div class="path-hint">
-            Saída: <code>drive/md/convertido</code><br />
-            Pasta local: <code id="destinoAtual">convertido</code><br />
-            Pasta no Drive: <code id="driveDestinoAtual">Espelho Documentos/convertido</code>
+          <div class="destino-head">
+            <div class="label">DESTINO</div>
+            <button id="newFolderBtn" class="destino-action" type="button">Nova</button>
           </div>
+          <select id="destinoSelect">
+            <option value="convertido" selected>convertido</option>
+          </select>
         </div>
         <div class="side-note">
           <strong>Google Drive</strong>
@@ -398,9 +406,7 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
             <span id="driveFolderChip" class="chip muted">Drive não sincronizado</span>
           </div>
           <div class="topbar-actions">
-            <span id="authChip" class="chip muted">Google não conectado</span>
-            <button id="openDriveBtn" class="btn" type="button" disabled>Abrir pasta no Drive</button>
-            <button id="googleLoginBtn" class="btn auth" type="button">Conectar Google</button>
+            <span class="chip muted">topbar-actions</span>
           </div>
         </header>
 
@@ -427,7 +433,6 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
               <div class="actions">
                 <button id="startBtn" class="btn btn-go" type="button" disabled>Iniciar extração lote</button>
                 <button id="clearBtn" class="btn btn-lite" type="button">Esvaziar</button>
-                <button id="newFolderBtn" class="btn btn-lite" type="button">Nova pasta</button>
               </div>
             </section>
 
