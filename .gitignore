@@ -10,6 +10,12 @@ node_modules/
 .data/
 drive/
 
+# Cloudflare Tunnel local credentials
+cloudflared/*.json
+cloudflared/cert.pem
+cloudflared/*.pem
+!cloudflared/config.yml
+
 # logs
 npm-debug.log*
 yarn-debug.log*

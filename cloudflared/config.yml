@@ -1,0 +1,6 @@
+# Cloudflare Tunnel config for this app-extrator repository only.
+# Replace the hostname with the public hostname configured in Cloudflare.
+ingress:
+  - hostname: app-extrator.example.com
+    service: http://localhost:3000
+  - service: http_status:404

@@ -1,5 +1,5 @@
 {
-  "name": "app",
+  "name": "app-extrator",
   "type": "module",
   "version": "0.0.1",
   "engines": {
@@ -7,6 +7,9 @@
   },
   "scripts": {
     "dev": "astro dev",
+    "dev:local": "astro dev --host 127.0.0.1 --port 3000",
+    "tunnel": "cloudflared tunnel --config cloudflared/config.yml run app-extrator",
+    "dev:tunnel": "sh -c 'npm run dev:local & DEV_PID=$!; trap \"kill $DEV_PID\" EXIT INT TERM; cloudflared tunnel --config cloudflared/config.yml run app-extrator'",
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro"

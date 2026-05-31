@@ -1,4 +1,4 @@
-# NCS Studio App
+# App Extrator
 
 Aplicação Astro focada no fluxo `extrator` e nas integrações com Google Drive/OAuth.
 
@@ -48,6 +48,34 @@ npm run build
 - `src/lib/` integração com Google e caminhos locais
 - `scripts/pdf_to_md_hybrid.py` conversor híbrido PDF -> Markdown
 - `drive/` saída local espelhada
+
+## Cloudflare Tunnel
+
+Este repositório é específico da app e não depende do workspace pai. O tunnel aponta para o servidor local em `localhost:3000`.
+
+Edite `cloudflared/config.yml` e troque `app-extrator.example.com` pelo hostname configurado na sua conta Cloudflare. Não salve credenciais no repositório.
+
+Para criar um tunnel nomeado:
+
+```sh
+cloudflared tunnel login
+cloudflared tunnel create app-extrator
+cloudflared tunnel route dns app-extrator app-extrator.example.com
+```
+
+Para rodar a aplicação e o tunnel em terminais separados:
+
+```sh
+npm install
+npm run dev:local
+cloudflared tunnel --config cloudflared/config.yml run app-extrator
+```
+
+Ou rode ambos pelo script:
+
+```sh
+npm run dev:tunnel
+```
 
 ## Observação sobre Drive
 
