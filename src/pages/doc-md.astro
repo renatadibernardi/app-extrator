@@ -746,7 +746,7 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
         <div class="destino">
           <div class="destino-head">
             <div class="label">DESTINO</div>
-            <button id="newFolderBtn" class="destino-action" type="button">Nova</button>
+            <button id="newFolderBtn" class="destino-action" type="button">Criar pasta</button>
           </div>
           <select id="destinoSelect">
             <option value="convertido" selected>convertido</option>
@@ -754,7 +754,7 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
         </div>
         <div class="side-note">
           <strong>Google Drive</strong>
-          Os ficheiros desta área são guardados em <code>drive/md</code>. Quando o Google está conectado, o markdown também é enviado para <code>Espelho Documentos</code> no Drive.
+          Escolha uma subpasta da pasta principal do Drive. Quando o Google está conectado, o markdown extraído é enviado para essa pasta.
         </div>
       </aside>
 
@@ -773,7 +773,9 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
             <span id="driveFolderChip" class="chip muted">Drive não sincronizado</span>
           </div>
           <div class="topbar-actions">
-            <span class="chip muted">topbar-actions</span>
+            <span id="authChip" class="chip muted">Google não conectado</span>
+            <button id="googleLoginBtn" class="btn btn-lite" type="button">Conectar Google</button>
+            <button id="openDriveBtn" class="btn btn-lite" type="button" disabled>Abrir Drive</button>
           </div>
         </header>
 
@@ -843,8 +845,8 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
     </div>
     <div id="folderModalBackdrop" class="modal-backdrop" aria-hidden="true">
       <div class="modal" role="dialog" aria-modal="true" aria-labelledby="folderModalTitle">
-        <h4 id="folderModalTitle">Criar nova pasta</h4>
-        <p>Escreve o nome da pasta e confirma para ela aparecer na lista de destino.</p>
+        <h4 id="folderModalTitle">Criar pasta no Drive</h4>
+        <p>A nova pasta será criada dentro da pasta principal do Drive e aparecerá na lista de destino.</p>
         <input id="folderNameInput" type="text" placeholder="ex: campanha-junho" autocomplete="off" />
         <div class="modal-actions">
           <button id="folderCancelBtn" class="btn btn-cancel" type="button">Cancelar</button>
@@ -891,8 +893,8 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
       const authChipEl = document.getElementById('authChip');
       const googleLoginBtn = document.getElementById('googleLoginBtn');
 
-      const DRIVE_ROOT_ID = 'root';
-      const DRIVE_ROOT_NAME = 'Espelho Documentos';
+      const DRIVE_ROOT_ID = '1ZVcO-yNceUveu8ORCZG9iOtkKHjSunmI';
+      const DRIVE_ROOT_NAME = 'Pasta principal do Drive';
       const DRIVE_FOLDER_BASE_URL = 'https://drive.google.com/drive/folders/';
       const appUrl = (pathname) => `${BASE_PATH}${pathname}`;
       const apiUrl = (pathname) => {
@@ -1043,8 +1045,8 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
         }
 
         if (openDriveBtn) {
-          openDriveBtn.disabled = googleAuthLoading || !googleAccessToken || driveFolderLoading;
-          openDriveBtn.textContent = driveFolderLoading ? 'A sincronizar...' : 'Abrir pasta no Drive';
+          openDriveBtn.disabled = googleAuthLoading || driveFolderLoading;
+          openDriveBtn.textContent = driveFolderLoading ? 'A sincronizar...' : 'Abrir Drive';
         }
       }
 
@@ -1182,7 +1184,10 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
       }
 
       async function openCurrentDriveFolder() {
-        if (!googleAccessToken) return;
+        if (!googleAccessToken) {
+          window.open(`${DRIVE_FOLDER_BASE_URL}${DRIVE_ROOT_ID}`, '_blank', 'noopener');
+          return;
+        }
         if (!driveFolderId) {
           try {
             await resolveDriveFolder(currentFolder, true);
@@ -1197,7 +1202,7 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
 
       function updateDriveDestinationLabel() {
         if (driveDestinoAtual) {
-          driveDestinoAtual.textContent = `Espelho Documentos/${currentFolder || 'convertido'}`;
+          driveDestinoAtual.textContent = `${DRIVE_ROOT_NAME}/${currentFolder || 'convertido'}`;
         }
       }
 
@@ -1470,7 +1475,9 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
                 try {
                   liveTitle.textContent = 'Enviando para o Drive';
                   liveSub.textContent = `A sincronizar ${item.mdName} na conta Google`;
-                  await uploadMarkdownToDrive(item);
+                  const driveFile = await uploadMarkdownToDrive(item);
+                  item.driveFile = driveFile;
+                  item.cloudError = `Sincronizado no Drive em ${DRIVE_ROOT_NAME}/${currentFolder}`;
                 } catch (error) {
                   item.cloudError = error instanceof Error ? error.message : 'Falha ao enviar para o Google Drive.';
                   errors += 1;
@@ -1543,6 +1550,10 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
       });
 
       newFolderBtn?.addEventListener('click', async () => {
+        if (!googleAccessToken) {
+          alert('Conecte o Google antes de criar uma pasta no Drive.');
+          return;
+        }
         openFolderModal();
       });
 
@@ -1574,18 +1585,11 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
         }
 
         try {
-          const response = googleAccessToken
-            ? await fetch(appUrl('/api/drive/create-folder'), {
+          const response = await fetch(appUrl('/api/drive/create-folder'), {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               credentials: 'same-origin',
               body: JSON.stringify({ parentId: DRIVE_ROOT_ID, name: folderName }),
-            })
-            : await fetch(appUrl('/api/extrator-folder-create'), {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              credentials: 'same-origin',
-              body: JSON.stringify({ folderName }),
             });
           const data = await response.json().catch(() => ({ ok: false }));
           if (!response.ok || !data.ok) {
@@ -1593,17 +1597,13 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
             return;
           }
 
-          const createdName = googleAccessToken ? (data.folder?.name || folderName) : (data.folder || folderName);
+          const createdName = data.folder?.name || folderName;
           currentFolder = createdName;
-          if (googleAccessToken) {
-            await refreshDestinationFoldersFromDrive();
-            if (destinoSelect) destinoSelect.value = createdName;
-            if (destinoAtual) destinoAtual.textContent = currentFolder;
-            updateDriveDestinationLabel();
-            void resolveDriveFolder(currentFolder, true);
-          } else {
-            selectDestinationFolder(createdName);
-          }
+          await refreshDestinationFoldersFromDrive();
+          if (destinoSelect) destinoSelect.value = createdName;
+          if (destinoAtual) destinoAtual.textContent = currentFolder;
+          updateDriveDestinationLabel();
+          void resolveDriveFolder(currentFolder, true);
           closeFolderModal();
         } catch (error) {
           alert('Erro ao criar a pasta.');
