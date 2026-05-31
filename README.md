@@ -5,7 +5,7 @@ Aplicação Astro focada no fluxo `extrator` e nas integrações com Google Driv
 ## O que este repositório contém
 
 - interface web para extração e organização de documentos
-- rota principal `doc-md` para o fluxo do extrator
+- rota pública `app-extrator/doc-md` para o fluxo do extrator
 - OAuth Google para autenticação e acesso ao Drive
 - salvamento local em `drive/` e sessão em `.data/`
 
@@ -21,13 +21,13 @@ Copie `.env.example` para `.env` e preencha as credenciais reais.
 
 Variáveis principais:
 
-- `PUBLIC_GOOGLE_OAUTH_CLIENT_ID`
-- `GOOGLE_OAUTH_CLIENT_ID`
-- `GOOGLE_OAUTH_CLIENT_SECRET`
-- `GOOGLE_OAUTH_REDIRECT_URI`
-- `GOOGLE_SESSION_SECRET`
+- `PUBLIC_GOOGLE_OAUTH_CLIENT_ID` — ID do cliente OAuth (público)
+- `GOOGLE_OAUTH_CLIENT_ID` — ID do cliente OAuth (servidor)
+- `GOOGLE_OAUTH_CLIENT_SECRET` — Chave secreta OAuth
+- `GOOGLE_OAUTH_REDIRECT_URI` — Deve ser `http://localhost:3001/app-extrator/auth/google/callback` para desenvolvimento
+- `GOOGLE_SESSION_SECRET` — Qualquer string secreta para assinar sessões
 
-O redirect OAuth precisa bater exatamente com o URI autorizado no Google Cloud Console. Google aceita `localhost` como exceção para a regra de HTTPS, mas em produção o URI precisa coincidir de forma literal.
+O redirect URI no `.env` precisa bater com o URI autorizado no Google Cloud Console. Para desenvolvimento local, use `http://localhost:3001/app-extrator/auth/google/callback`. Para produção, use `https://madrinhadosono.online/app-extrator/auth/google/callback`.
 
 ## Rodar localmente
 
@@ -51,16 +51,18 @@ npm run build
 
 ## Cloudflare Tunnel
 
-Este repositório é específico da app e não depende do workspace pai. O tunnel aponta para o servidor local em `localhost:3000`.
+Há um guia dedicado em `cloudflared/README.md` com os passos de criação e execução do tunnel.
 
-Edite `cloudflared/config.yml` e troque `app-extrator.example.com` pelo hostname configurado na sua conta Cloudflare. Não salve credenciais no repositório.
+Este repositório é específico da app e não depende do workspace pai. O tunnel aponta para o servidor local em `localhost:3001`.
+
+O `cloudflared/config.yml` está preparado para publicar este app em `https://madrinhadosono.online/app-extrator`, apontando para o servidor local em `localhost:3001`. Não salve credenciais no repositório.
 
 Para criar um tunnel nomeado:
 
 ```sh
 cloudflared tunnel login
 cloudflared tunnel create app-extrator
-cloudflared tunnel route dns app-extrator app-extrator.example.com
+cloudflared tunnel route dns app-extrator madrinhadosono.online
 ```
 
 Para rodar a aplicação e o tunnel em terminais separados:

@@ -1,11 +1,14 @@
 ---
 const GOOGLE_OAUTH_CLIENT_ID = import.meta.env.PUBLIC_GOOGLE_OAUTH_CLIENT_ID || '';
+const BASE_PATH = import.meta.env.BASE_URL.replace(/\/$/, '');
+const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
 ---
 <html lang="pt-BR">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Extrator Inteligente</title>
+    <link rel="icon" href={appUrl('/favicon.ico')} />
     <style>
       :root {
         --bg: #f2f2ef;
@@ -326,6 +329,16 @@ const GOOGLE_OAUTH_CLIENT_ID = import.meta.env.PUBLIC_GOOGLE_OAUTH_CLIENT_ID || 
       .sheet-row:first-child { border-top: 0; }
       .sheet-label { color: var(--muted); }
       .sheet-value { color: #1f2d21; font-weight: 700; word-break: break-all; }
+      .sheet-folder-select {
+        width: 100%;
+        border: 1px solid #d5ddd0;
+        border-radius: 10px;
+        background: #fff;
+        color: #1f2d21;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 8px 10px;
+      }
       .live-box {
         margin-top: 10px;
         border: 1px solid #d4dfd0;
@@ -348,10 +361,10 @@ const GOOGLE_OAUTH_CLIENT_ID = import.meta.env.PUBLIC_GOOGLE_OAUTH_CLIENT_ID || 
         <div class="avatar">CS</div>
         <div class="brand">Clauda Santos<small>DOCUMENT MANAGEMENT PORTAL</small></div>
         <nav class="menu">
-          <a class="active" href="/doc-md">Painel de Indexação</a>
-          <a href="/doc-md">Gerir Markdown</a>
+          <a class="active" href={appUrl('/doc-md')}>Painel de Indexação</a>
+          <a href={appUrl('/doc-md')}>Gerir Markdown</a>
           <a href="#">Tradutor Automático</a>
-          <a href="/doc-md">Extração OCR</a>
+          <a href={appUrl('/doc-md')}>Extração OCR</a>
         </nav>
         <div class="destino">
           <div class="label">PASTA DE DESTINO</div>
@@ -439,7 +452,7 @@ const GOOGLE_OAUTH_CLIENT_ID = import.meta.env.PUBLIC_GOOGLE_OAUTH_CLIENT_ID || 
               <div class="sheet-row"><div class="sheet-label">Nome original</div><div id="sheetName" class="sheet-value"></div></div>
               <div class="sheet-row"><div class="sheet-label">Tamanho</div><div id="sheetSize" class="sheet-value"></div></div>
               <div class="sheet-row"><div class="sheet-label">Estado</div><div id="sheetState" class="sheet-value"></div></div>
-              <div class="sheet-row"><div class="sheet-label">Pasta de destino</div><div id="sheetFolder" class="sheet-value"></div></div>
+              <div class="sheet-row"><div class="sheet-label">Pasta de destino</div><select id="sheetFolderSelect" class="sheet-folder-select"></select></div>
             </div>
             <div id="liveBox" class="live-box" hidden>
               <div id="liveTitle" class="live-title"></div>
@@ -467,7 +480,7 @@ const GOOGLE_OAUTH_CLIENT_ID = import.meta.env.PUBLIC_GOOGLE_OAUTH_CLIENT_ID || 
         </div>
       </div>
     </div>
-    <script define:vars={{ GOOGLE_OAUTH_CLIENT_ID }}>
+    <script define:vars={{ GOOGLE_OAUTH_CLIENT_ID, BASE_PATH }}>
       const fileInput = document.getElementById('fileInput');
       const selectBtn = document.getElementById('selectBtn');
       const startBtn = document.getElementById('startBtn');
@@ -497,7 +510,7 @@ const GOOGLE_OAUTH_CLIENT_ID = import.meta.env.PUBLIC_GOOGLE_OAUTH_CLIENT_ID || 
       const sheetName = document.getElementById('sheetName');
       const sheetSize = document.getElementById('sheetSize');
       const sheetState = document.getElementById('sheetState');
-      const sheetFolder = document.getElementById('sheetFolder');
+      const sheetFolderSelect = document.getElementById('sheetFolderSelect');
       const liveBox = document.getElementById('liveBox');
       const liveTitle = document.getElementById('liveTitle');
       const liveSub = document.getElementById('liveSub');
@@ -509,15 +522,16 @@ const GOOGLE_OAUTH_CLIENT_ID = import.meta.env.PUBLIC_GOOGLE_OAUTH_CLIENT_ID || 
       const DRIVE_ROOT_ID = 'root';
       const DRIVE_ROOT_NAME = 'Espelho Documentos';
       const DRIVE_FOLDER_BASE_URL = 'https://drive.google.com/drive/folders/';
-      const AUTH_STATUS_URL = '/api/auth/google/status';
-      const AUTH_LOGOUT_URL = '/api/auth/google/logout';
-      const AUTH_START_URL = '/auth/google/start?returnTo=/doc-md';
+      const appUrl = (pathname) => `${BASE_PATH}${pathname}`;
+      const AUTH_STATUS_URL = appUrl('/api/auth/google/status');
+      const AUTH_LOGOUT_URL = appUrl('/api/auth/google/logout');
+      const AUTH_START_URL = `${appUrl('/auth/google/start')}?returnTo=${encodeURIComponent(appUrl('/doc-md'))}`;
 
       let queue = [];
       let done = 0;
       let errors = 0;
       let selectedIndex = -1;
-      let currentFolder = destinoSelect?.value || 'convertido';
+      let currentFolder = 'convertido';
       let driveFolderId = '';
       let driveFolderName = '';
       let driveFolderLoading = false;
@@ -560,14 +574,16 @@ const GOOGLE_OAUTH_CLIENT_ID = import.meta.env.PUBLIC_GOOGLE_OAUTH_CLIENT_ID || 
 
         if (!normalizedFolders.length) {
           const option = document.createElement('option');
-          option.value = '';
-          option.textContent = googleAccessToken
-            ? 'Nenhuma pasta no Drive'
-            : 'Conecte o Google para carregar pastas';
+          option.value = String(selectedFolder || currentFolder || 'convertido').trim() || 'convertido';
+          option.textContent = option.value;
           option.selected = true;
-          option.disabled = true;
           destinoSelect.appendChild(option);
+          currentFolder = option.value;
+          if (destinoAtual) {
+            destinoAtual.textContent = currentFolder;
+          }
           updateDriveDestinationLabel();
+          syncSheetFolderSelect();
           return;
         }
 
@@ -590,6 +606,7 @@ const GOOGLE_OAUTH_CLIENT_ID = import.meta.env.PUBLIC_GOOGLE_OAUTH_CLIENT_ID || 
           destinoAtual.textContent = currentFolder;
         }
         updateDriveDestinationLabel();
+        syncSheetFolderSelect();
       }
 
       function selectDestinationFolder(folderName) {
@@ -615,6 +632,28 @@ const GOOGLE_OAUTH_CLIENT_ID = import.meta.env.PUBLIC_GOOGLE_OAUTH_CLIENT_ID || 
           destinoAtual.textContent = currentFolder;
         }
         updateDriveDestinationLabel();
+        syncSheetFolderSelect();
+      }
+
+      function syncSheetFolderSelect() {
+        if (!sheetFolderSelect) return;
+
+        const selectedFolder = String(currentFolder || 'convertido').trim() || 'convertido';
+        const folders = Array.from(destinoSelect?.options || [])
+          .filter((option) => !option.disabled && option.value)
+          .map((option) => option.value);
+        const uniqueFolders = Array.from(new Set([...folders, selectedFolder]));
+
+        sheetFolderSelect.innerHTML = '';
+        for (const folder of uniqueFolders.length ? uniqueFolders : ['convertido']) {
+          const option = document.createElement('option');
+          option.value = folder;
+          option.textContent = folder;
+          if (folder === selectedFolder) {
+            option.selected = true;
+          }
+          sheetFolderSelect.appendChild(option);
+        }
       }
 
       function renderDriveState() {
@@ -696,7 +735,7 @@ const GOOGLE_OAUTH_CLIENT_ID = import.meta.env.PUBLIC_GOOGLE_OAUTH_CLIENT_ID || 
       }
 
       async function fetchDriveFolderChildren(folderId) {
-        const response = await fetch(`/api/drive/list?folderId=${encodeURIComponent(folderId)}`, {
+        const response = await fetch(`${appUrl('/api/drive/list')}?folderId=${encodeURIComponent(folderId)}`, {
           credentials: 'same-origin'
         });
         const data = await response.json().catch(() => ({ ok: false }));
@@ -707,7 +746,7 @@ const GOOGLE_OAUTH_CLIENT_ID = import.meta.env.PUBLIC_GOOGLE_OAUTH_CLIENT_ID || 
       }
 
       async function createDriveFolder(parentId, name) {
-        const response = await fetch('/api/drive/create-folder', {
+        const response = await fetch(appUrl('/api/drive/create-folder'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -797,7 +836,7 @@ const GOOGLE_OAUTH_CLIENT_ID = import.meta.env.PUBLIC_GOOGLE_OAUTH_CLIENT_ID || 
           throw new Error('Não foi possível resolver a pasta do Google Drive.');
         }
 
-        const response = await fetch('/api/drive/upload', {
+        const response = await fetch(appUrl('/api/drive/upload'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -920,7 +959,7 @@ const GOOGLE_OAUTH_CLIENT_ID = import.meta.env.PUBLIC_GOOGLE_OAUTH_CLIENT_ID || 
         sheetName.textContent = item.name;
         sheetSize.textContent = item.sizeLabel || '-';
         sheetState.textContent = item.status;
-        if (sheetFolder) sheetFolder.textContent = currentFolder || 'convertido';
+        syncSheetFolderSelect();
 
         if (item.status === 'processing' || item.status.includes('a processar')) {
           liveBox.hidden = false;
@@ -1028,7 +1067,7 @@ const GOOGLE_OAUTH_CLIENT_ID = import.meta.env.PUBLIC_GOOGLE_OAUTH_CLIENT_ID || 
           beginProgress(item);
 
           try {
-            const response = await fetch('/api/extrator-process', {
+            const response = await fetch(appUrl('/api/extrator-process'), {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/octet-stream',
@@ -1114,6 +1153,14 @@ const GOOGLE_OAUTH_CLIENT_ID = import.meta.env.PUBLIC_GOOGLE_OAUTH_CLIENT_ID || 
           destinoAtual.textContent = currentFolder || 'sem pasta';
         }
         updateDriveDestinationLabel();
+        syncSheetFolderSelect();
+        if (googleAccessToken) {
+          void resolveDriveFolder(currentFolder, true);
+        }
+      });
+
+      sheetFolderSelect?.addEventListener('change', () => {
+        selectDestinationFolder(sheetFolderSelect.value || 'convertido');
         if (googleAccessToken) {
           void resolveDriveFolder(currentFolder, true);
         }
@@ -1152,13 +1199,13 @@ const GOOGLE_OAUTH_CLIENT_ID = import.meta.env.PUBLIC_GOOGLE_OAUTH_CLIENT_ID || 
 
         try {
           const response = googleAccessToken
-            ? await fetch('/api/drive/create-folder', {
+            ? await fetch(appUrl('/api/drive/create-folder'), {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               credentials: 'same-origin',
               body: JSON.stringify({ parentId: DRIVE_ROOT_ID, name: folderName }),
             })
-            : await fetch('/api/extrator-folder-create', {
+            : await fetch(appUrl('/api/extrator-folder-create'), {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               credentials: 'same-origin',
@@ -1200,7 +1247,7 @@ const GOOGLE_OAUTH_CLIENT_ID = import.meta.env.PUBLIC_GOOGLE_OAUTH_CLIENT_ID || 
           return;
         }
         try {
-          const response = await fetch('/api/extrator-save', {
+          const response = await fetch(appUrl('/api/extrator-save'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ mdName, content, folder: currentFolder }),

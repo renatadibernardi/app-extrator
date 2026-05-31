@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { exchangeGoogleCode, fetchGoogleProfile, sanitizeReturnTo, getGoogleOAuthRedirectUri } from '../../../lib/google-auth';
+import { exchangeGoogleCode, fetchGoogleProfile, sanitizeReturnTo, getGoogleOAuthRedirectUri, withAppBase } from '../../../lib/google-auth';
 import {
   GOOGLE_OAUTH_STATE_COOKIE,
   GOOGLE_SESSION_COOKIE,
@@ -19,7 +19,7 @@ export const GET: APIRoute = async ({ request, cookies }) => {
   const state = url.searchParams.get('state');
 
   const stateCookie = verifySignedValue(cookies.get(GOOGLE_OAUTH_STATE_COOKIE)?.value);
-  let returnTo = '/doc-md';
+  let returnTo = withAppBase('/doc-md');
 
   if (stateCookie) {
     try {

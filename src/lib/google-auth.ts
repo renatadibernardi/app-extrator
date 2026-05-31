@@ -120,10 +120,20 @@ export async function fetchGoogleProfile(accessToken: string) {
   };
 }
 
+export function getAppBasePath(): string {
+  const base = String(import.meta.env.BASE_URL || '/').replace(/\/$/, '');
+  return base === '/' ? '' : base;
+}
+
+export function withAppBase(pathname: string): string {
+  const path = pathname.startsWith('/') ? pathname : `/${pathname}`;
+  return `${getAppBasePath()}${path}`;
+}
+
 export function sanitizeReturnTo(value: string | null | undefined): string {
   const candidate = String(value || '').trim();
   if (!candidate.startsWith('/')) {
-    return '/doc-md';
+    return withAppBase('/doc-md');
   }
   return candidate;
 }
@@ -135,7 +145,7 @@ export function getGoogleOAuthRedirectUri(request: Request): string {
   }
 
   const defaultUrl = new URL(request.url);
-  defaultUrl.pathname = '/auth/google/callback';
+  defaultUrl.pathname = withAppBase('/auth/google/callback');
   defaultUrl.search = '';
   defaultUrl.hash = '';
   return defaultUrl.toString();
