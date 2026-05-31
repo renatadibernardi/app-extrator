@@ -204,6 +204,9 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
         flex-wrap: wrap;
         justify-content: flex-end;
       }
+      .topbar-actions [hidden] {
+        display: none;
+      }
       .btn.auth {
         background: rgba(126, 203, 255, 0.1);
         color: #d8ebff;
@@ -739,9 +742,6 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
         <div class="brand">Clauda Santos<small>DOCUMENT MANAGEMENT PORTAL</small></div>
         <nav class="menu">
           <a class="active" href={appUrl('/doc-md')}>Painel de Indexação</a>
-          <a href={appUrl('/doc-md')}>Gerir Markdown</a>
-          <a href="#">Tradutor Automático</a>
-          <a href={appUrl('/doc-md')}>Extração OCR</a>
         </nav>
         <div class="destino">
           <div class="destino-head">
@@ -767,15 +767,10 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
               <div class="sub">Fila multiponto para PDF, imagens, DOCX, Markdown e texto puro com destino Drive.</div>
             </div>
           </div>
-          <div class="chips">
-            <span class="chip chip-soft">Google Drive</span>
-            <span class="chip chip-green">Saída: drive/md/convertido</span>
-            <span id="driveFolderChip" class="chip muted">Drive não sincronizado</span>
-          </div>
           <div class="topbar-actions">
             <span id="authChip" class="chip muted">Google não conectado</span>
             <button id="googleLoginBtn" class="btn btn-lite" type="button">Conectar Google</button>
-            <button id="openDriveBtn" class="btn btn-lite" type="button" disabled>Abrir Drive</button>
+            <button id="openDriveBtn" class="btn btn-lite" type="button" hidden>Abrir Drive</button>
           </div>
         </header>
 
@@ -1045,6 +1040,7 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
         }
 
         if (openDriveBtn) {
+          openDriveBtn.hidden = googleAuthLoading || !googleAccessToken;
           openDriveBtn.disabled = googleAuthLoading || driveFolderLoading;
           openDriveBtn.textContent = driveFolderLoading ? 'A sincronizar...' : 'Abrir Drive';
         }
