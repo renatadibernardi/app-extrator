@@ -30,6 +30,34 @@ function normalizeText(value: string): string {
   return value.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trimEnd();
 }
 
+async function readUpload(request: Request) {
+  const contentType = request.headers.get('content-type') || '';
+
+  if (contentType.toLowerCase().includes('multipart/form-data')) {
+    const form = await request.formData();
+    const file = form.get('file');
+    const folder = sanitizeFolder(String(form.get('folder') || 'convertido'));
+
+    if (!(file instanceof File)) {
+      return { fileName: '', folder, buffer: null };
+    }
+
+    return {
+      fileName: file.name,
+      folder,
+      buffer: Buffer.from(await file.arrayBuffer()),
+    };
+  }
+
+  const fileName = decodeURIComponent(request.headers.get('x-file-name') || 'documento.pdf');
+  const folder = sanitizeFolder(decodeURIComponent(request.headers.get('x-folder') || 'convertido'));
+  return {
+    fileName,
+    folder,
+    buffer: Buffer.from(await request.arrayBuffer()),
+  };
+}
+
 function runLibreOfficeToText(inputPath: string, tempDir: string): string {
   execFileSync(
     'libreoffice',
@@ -59,10 +87,8 @@ function runImageOcr(inputPath: string): string {
 
 export const POST: APIRoute = async ({ request }) => {
   try {
-    const form = await request.formData();
-    const file = form.get('file');
-    const folder = sanitizeFolder(String(form.get('folder') || 'convertido'));
-    if (!(file instanceof File)) {
+    const upload = await readUpload(request);
+    if (!upload.buffer?.byteLength || !upload.fileName) {
       return new Response(JSON.stringify({ ok: false, error: 'Arquivo inválido.' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
@@ -77,12 +103,12 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ncs-extrator-'));
-    const inputPdf = path.join(tmpDir, sanitizeName(file.name));
-    const outputDir = path.join(DOC_MD_ROOT, folder);
-    const outputFile = path.join(outputDir, toMarkdownName(file.name));
-    const extension = path.extname(file.name).toLowerCase();
+    const inputPdf = path.join(tmpDir, sanitizeName(upload.fileName));
+    const outputDir = path.join(DOC_MD_ROOT, upload.folder);
+    const outputFile = path.join(outputDir, toMarkdownName(upload.fileName));
+    const extension = path.extname(upload.fileName).toLowerCase();
 
-    fs.writeFileSync(inputPdf, Buffer.from(await file.arrayBuffer()));
+    fs.writeFileSync(inputPdf, upload.buffer);
     fs.mkdirSync(outputDir, { recursive: true });
 
     let markdown = '';
@@ -96,26 +122,26 @@ export const POST: APIRoute = async ({ request }) => {
       });
       markdown = fs.existsSync(outputFile) ? fs.readFileSync(outputFile, 'utf-8') : '';
     } else if (extension === '.txt' || extension === '.md') {
-      markdown = normalizeText(await file.text());
+      markdown = normalizeText(upload.buffer.toString('utf-8'));
       if (markdown) {
         markdown += '\n';
       }
       fs.writeFileSync(outputFile, markdown, 'utf-8');
-      stdout = `OK: texto importado de ${file.name}`;
+      stdout = `OK: texto importado de ${upload.fileName}`;
     } else if (extension === '.png' || extension === '.jpg' || extension === '.jpeg') {
       markdown = runImageOcr(inputPdf);
       if (markdown) {
         markdown += '\n';
       }
       fs.writeFileSync(outputFile, markdown, 'utf-8');
-      stdout = `OK: OCR de imagem concluído para ${file.name}`;
+      stdout = `OK: OCR de imagem concluído para ${upload.fileName}`;
     } else if (extension === '.doc' || extension === '.docx') {
       markdown = normalizeText(runLibreOfficeToText(inputPdf, tmpDir));
       if (markdown) {
         markdown += '\n';
       }
       fs.writeFileSync(outputFile, markdown, 'utf-8');
-      stdout = `OK: documento convertido de ${file.name}`;
+      stdout = `OK: documento convertido de ${upload.fileName}`;
     } else {
       return new Response(JSON.stringify({ ok: false, error: `Formato não suportado: ${extension || 'desconhecido'}` }), {
         status: 400,
@@ -125,7 +151,7 @@ export const POST: APIRoute = async ({ request }) => {
 
     return new Response(JSON.stringify({
       ok: true,
-      folder,
+      folder: upload.folder,
       outputFile,
       mdName: path.basename(outputFile),
       markdown,

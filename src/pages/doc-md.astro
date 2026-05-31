@@ -506,7 +506,7 @@ const GOOGLE_OAUTH_CLIENT_ID = import.meta.env.PUBLIC_GOOGLE_OAUTH_CLIENT_ID || 
       const authChipEl = document.getElementById('authChip');
       const googleLoginBtn = document.getElementById('googleLoginBtn');
 
-      const DRIVE_ROOT_ID = '1ZVcO-yNceUveu8ORCZG9iOtkKHjSunmI';
+      const DRIVE_ROOT_ID = 'root';
       const DRIVE_ROOT_NAME = 'Espelho Documentos';
       const DRIVE_FOLDER_BASE_URL = 'https://drive.google.com/drive/folders/';
       const AUTH_STATUS_URL = '/api/auth/google/status';
@@ -628,7 +628,7 @@ const GOOGLE_OAUTH_CLIENT_ID = import.meta.env.PUBLIC_GOOGLE_OAUTH_CLIENT_ID || 
         }
 
         if (openDriveBtn) {
-          openDriveBtn.disabled = googleAuthLoading || !googleAccessToken || driveFolderLoading || !driveFolderId;
+          openDriveBtn.disabled = googleAuthLoading || !googleAccessToken || driveFolderLoading;
           openDriveBtn.textContent = driveFolderLoading ? 'A sincronizar...' : 'Abrir pasta no Drive';
         }
       }
@@ -766,7 +766,16 @@ const GOOGLE_OAUTH_CLIENT_ID = import.meta.env.PUBLIC_GOOGLE_OAUTH_CLIENT_ID || 
         }
       }
 
-      function openCurrentDriveFolder() {
+      async function openCurrentDriveFolder() {
+        if (!googleAccessToken) return;
+        if (!driveFolderId) {
+          try {
+            await resolveDriveFolder(currentFolder, true);
+          } catch {
+            // fallback to root if folder resolution fails
+          }
+        }
+
         const targetId = driveFolderId || DRIVE_ROOT_ID;
         window.open(`${DRIVE_FOLDER_BASE_URL}${targetId}`, '_blank', 'noopener');
       }
@@ -1019,13 +1028,14 @@ const GOOGLE_OAUTH_CLIENT_ID = import.meta.env.PUBLIC_GOOGLE_OAUTH_CLIENT_ID || 
           beginProgress(item);
 
           try {
-            const formData = new FormData();
-            formData.append('file', item.file);
-            formData.append('folder', currentFolder);
-
             const response = await fetch('/api/extrator-process', {
               method: 'POST',
-              body: formData,
+              headers: {
+                'Content-Type': 'application/octet-stream',
+                'X-File-Name': encodeURIComponent(item.file.name),
+                'X-Folder': encodeURIComponent(currentFolder),
+              },
+              body: item.file,
             });
             const data = await response.json().catch(() => ({ ok: false }));
 
@@ -1208,7 +1218,8 @@ const GOOGLE_OAUTH_CLIENT_ID = import.meta.env.PUBLIC_GOOGLE_OAUTH_CLIENT_ID || 
               await uploadMarkdownToDrive(active);
               alert(`Alterações salvas em drive/md/${currentFolder}/${mdName} e enviadas para o Google Drive.`);
             } catch (error) {
-              alert(`Alterações salvas em drive/md/${currentFolder}/${mdName}, mas o envio ao Google Drive falhou.`);
+              const message = error instanceof Error ? error.message : 'Erro desconhecido.';
+              alert(`Alterações salvas em drive/md/${currentFolder}/${mdName}, mas o envio ao Google Drive falhou: ${message}`);
             }
           } else {
             alert(`Alterações salvas em drive/md/${currentFolder}/${mdName}`);
@@ -1218,8 +1229,8 @@ const GOOGLE_OAUTH_CLIENT_ID = import.meta.env.PUBLIC_GOOGLE_OAUTH_CLIENT_ID || 
         }
       });
 
-      openDriveBtn?.addEventListener('click', () => {
-        openCurrentDriveFolder();
+      openDriveBtn?.addEventListener('click', async () => {
+        await openCurrentDriveFolder();
       });
 
       renderDestinationFolders([], currentFolder);
