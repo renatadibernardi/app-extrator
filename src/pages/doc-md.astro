@@ -773,7 +773,7 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
           </div>
           <div class="topbar-actions">
             <span id="authChip" class="chip muted">Google não conectado</span>
-            <button id="googleLoginBtn" class="btn btn-lite" type="button">Conectar Google</button>
+            <a id="googleLoginBtn" class="btn btn-lite" href={`${appUrl('/auth/google/start')}?returnTo=${encodeURIComponent(appUrl('/doc-md'))}`}>Conectar Google</a>
             <button id="openDriveBtn" class="btn btn-lite" type="button" hidden>Abrir Drive</button>
           </div>
         </header>
@@ -1121,7 +1121,12 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
               ? 'Desconectar'
               : 'Conectar Google';
           googleLoginBtn.className = signedIn ? 'btn auth signed-in' : 'btn auth';
-          googleLoginBtn.disabled = googleAuthLoading;
+          googleLoginBtn.setAttribute('aria-disabled', googleAuthLoading ? 'true' : 'false');
+          if (!signedIn) {
+            googleLoginBtn.setAttribute('href', AUTH_START_URL);
+          } else {
+            googleLoginBtn.setAttribute('href', '#');
+          }
         }
 
         renderDriveState();
@@ -1455,10 +1460,14 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
 
       selectBtn?.addEventListener('click', () => fileInput?.click());
 
-      googleLoginBtn?.addEventListener('click', async () => {
-        if (googleAuthLoading) return;
+      googleLoginBtn?.addEventListener('click', async (event) => {
+        if (googleAuthLoading) {
+          event.preventDefault();
+          return;
+        }
 
         if (googleAccessToken) {
+          event.preventDefault();
           try {
             await fetch(AUTH_LOGOUT_URL, {
               method: 'POST',
@@ -1473,7 +1482,6 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
         }
 
         saveWorkState();
-        window.location.href = AUTH_START_URL;
       });
 
       fileInput?.addEventListener('change', () => {
