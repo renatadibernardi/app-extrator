@@ -7,8 +7,8 @@ dist/
 node_modules/
 
 # local runtime data
-.data/
-drive/
+/.data/
+/drive/
 
 # Cloudflare Tunnel local credentials
 cloudflared/*.json

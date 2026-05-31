@@ -592,6 +592,31 @@ const GOOGLE_OAUTH_CLIENT_ID = import.meta.env.PUBLIC_GOOGLE_OAUTH_CLIENT_ID || 
         updateDriveDestinationLabel();
       }
 
+      function selectDestinationFolder(folderName) {
+        if (!destinoSelect) return;
+        const normalizedName = String(folderName || '').trim() || 'convertido';
+        const existingOptions = Array.from(destinoSelect.options).filter((option) => !option.disabled && option.value);
+        const exists = existingOptions.some((option) => option.value === normalizedName);
+
+        if (!exists) {
+          destinoSelect.innerHTML = '';
+          for (const option of existingOptions) {
+            destinoSelect.appendChild(option);
+          }
+          const option = document.createElement('option');
+          option.value = normalizedName;
+          option.textContent = normalizedName;
+          destinoSelect.appendChild(option);
+        }
+
+        destinoSelect.value = normalizedName;
+        currentFolder = normalizedName;
+        if (destinoAtual) {
+          destinoAtual.textContent = currentFolder;
+        }
+        updateDriveDestinationLabel();
+      }
+
       function renderDriveState() {
         if (driveFolderChip) {
           driveFolderChip.textContent = googleAuthLoading
@@ -1116,25 +1141,36 @@ const GOOGLE_OAUTH_CLIENT_ID = import.meta.env.PUBLIC_GOOGLE_OAUTH_CLIENT_ID || 
         }
 
         try {
-          const response = await fetch('/api/drive/create-folder', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'same-origin',
-            body: JSON.stringify({ parentId: DRIVE_ROOT_ID, name: folderName }),
-          });
+          const response = googleAccessToken
+            ? await fetch('/api/drive/create-folder', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'same-origin',
+              body: JSON.stringify({ parentId: DRIVE_ROOT_ID, name: folderName }),
+            })
+            : await fetch('/api/extrator-folder-create', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'same-origin',
+              body: JSON.stringify({ folderName }),
+            });
           const data = await response.json().catch(() => ({ ok: false }));
           if (!response.ok || !data.ok) {
-            alert(data.error || 'Não foi possível criar a pasta no Google Drive.');
+            alert(data.error || 'Não foi possível criar a pasta.');
             return;
           }
 
-          const createdName = data.folder?.name || folderName;
+          const createdName = googleAccessToken ? (data.folder?.name || folderName) : (data.folder || folderName);
           currentFolder = createdName;
-          await refreshDestinationFoldersFromDrive();
-          if (destinoSelect) destinoSelect.value = createdName;
-          if (destinoAtual) destinoAtual.textContent = currentFolder;
-          updateDriveDestinationLabel();
-          if (googleAccessToken) void resolveDriveFolder(currentFolder, true);
+          if (googleAccessToken) {
+            await refreshDestinationFoldersFromDrive();
+            if (destinoSelect) destinoSelect.value = createdName;
+            if (destinoAtual) destinoAtual.textContent = currentFolder;
+            updateDriveDestinationLabel();
+            void resolveDriveFolder(currentFolder, true);
+          } else {
+            selectDestinationFolder(createdName);
+          }
           closeFolderModal();
         } catch (error) {
           alert('Erro ao criar a pasta.');
