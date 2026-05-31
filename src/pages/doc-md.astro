@@ -502,9 +502,16 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
       .chip,
       .queue-badge,
       .live-box {
-        background: #ffdbcf;
-        border-color: #fdb69d;
-        color: #794532;
+        background: linear-gradient(135deg, #e9d8c6 0%, #dbe7d2 100%);
+        border-color: #b9b59d;
+        color: #3a3525;
+      }
+      .live-title {
+        color: #2f2a1f;
+        font-weight: 700;
+      }
+      .live-sub {
+        color: #3d3a2f;
       }
       .chip.muted {
         background: #eae1d7;
@@ -752,10 +759,6 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
             <option value="convertido" selected>convertido</option>
           </select>
         </div>
-        <div class="side-note">
-          <strong>Google Drive</strong>
-          Escolha uma subpasta da pasta principal do Drive. Quando o Google está conectado, o markdown extraído é enviado para essa pasta.
-        </div>
       </aside>
 
       <section class="main">
@@ -899,6 +902,8 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
       const AUTH_STATUS_URL = appUrl('/api/auth/google/status');
       const AUTH_LOGOUT_URL = appUrl('/api/auth/google/logout');
       const AUTH_START_URL = `${appUrl('/auth/google/start')}?returnTo=${encodeURIComponent(appUrl('/doc-md'))}`;
+      const WORK_STATE_KEY = 'app-extrator-doc-md-work';
+      const loginState = new URLSearchParams(window.location.search).get('googleLogin') || '';
 
       let queue = [];
       let done = 0;
@@ -913,7 +918,6 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
       let googleAccessToken = '';
       let googleUserLabel = '';
       let googleAuthLoading = true;
-
       function setStatus(message) {
         if (viewerStatus) {
           viewerStatus.textContent = message;
@@ -931,6 +935,57 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
         }
 
         renderAuthState();
+      }
+
+      function serializeQueueItem(item) {
+        return {
+          name: item.name || '',
+          type: item.type || '',
+          status: item.status || 'na fila',
+          progress: Number(item.progress) || 0,
+          output: item.output || '',
+          sizeLabel: item.sizeLabel || '',
+          mdName: item.mdName || '',
+          savedPath: item.savedPath || '',
+          cloudError: item.cloudError || '',
+          driveFile: item.driveFile || null,
+        };
+      }
+
+      function saveWorkState() {
+        try {
+          localStorage.setItem(WORK_STATE_KEY, JSON.stringify({
+            queue: queue.map(serializeQueueItem),
+            done,
+            errors,
+            selectedIndex,
+            currentFolder,
+          }));
+        } catch {}
+      }
+
+      function restoreWorkState() {
+        try {
+          const raw = localStorage.getItem(WORK_STATE_KEY);
+          if (!raw) return false;
+          const data = JSON.parse(raw);
+          const restoredQueue = Array.isArray(data.queue) ? data.queue : [];
+          if (!restoredQueue.length) return false;
+
+          queue = restoredQueue.map((item) => ({
+            ...item,
+            file: null,
+            status: item.status || 'done',
+            progress: Number(item.progress) || (item.output ? 100 : 0),
+          }));
+          done = Number(data.done) || queue.filter((item) => String(item.status || '').startsWith('done')).length;
+          errors = Number(data.errors) || queue.filter((item) => String(item.status || '') === 'erro').length;
+          selectedIndex = Math.min(Math.max(Number(data.selectedIndex) || 0, 0), queue.length - 1);
+          currentFolder = String(data.currentFolder || currentFolder || 'convertido');
+          return true;
+        } catch {
+          return false;
+        }
       }
 
       function renderDestinationFolders(folders, selectedFolder = currentFolder) {
@@ -1084,8 +1139,15 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
           if (data?.authenticated) {
             await resolveDriveFolder(currentFolder, true);
             await refreshDestinationFoldersFromDrive();
+            if (loginState === 'success') {
+              await syncPendingDriveUploads();
+              window.history.replaceState({}, '', appUrl('/doc-md'));
+            }
           } else {
             renderDestinationFolders([], currentFolder);
+            if (loginState === 'start-required') {
+              setStatus('Clique em Conectar Google para autorizar o Drive.');
+            }
           }
         } catch {
           setAuthState('', '');
@@ -1235,6 +1297,30 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
         return data.file || null;
       }
 
+      async function syncPendingDriveUploads() {
+        if (!googleAccessToken) return;
+        const pending = queue.filter((item) => item.output && !item.driveFile && String(item.status || '').startsWith('done'));
+        if (!pending.length) return;
+
+        for (const item of pending) {
+          try {
+            item.cloudError = 'Sincronizando no Google Drive...';
+            setViewer(item);
+            renderQueue();
+            const driveFile = await uploadMarkdownToDrive(item);
+            item.driveFile = driveFile;
+            item.status = 'done';
+            item.cloudError = `Sincronizado no Drive em ${DRIVE_ROOT_NAME}/${currentFolder}`;
+          } catch (error) {
+            item.status = 'done com aviso';
+            item.cloudError = error instanceof Error ? error.message : 'Falha ao enviar para o Google Drive.';
+          }
+          setViewer(item);
+          renderQueue();
+          saveWorkState();
+        }
+      }
+
       function stopProgressTimer() {
         if (activeProgressTimer) {
           clearInterval(activeProgressTimer);
@@ -1381,9 +1467,11 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
 
           setAuthState('', '');
           setStatus('Google desconectado.', 'success');
+          saveWorkState();
           return;
         }
 
+        saveWorkState();
         window.location.href = AUTH_START_URL;
       });
 
@@ -1401,6 +1489,7 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
         done = 0;
         errors = 0;
         renderQueue();
+        saveWorkState();
         if (queue.length > 0) {
           selectedIndex = 0;
           setViewer(queue[0]);
@@ -1416,6 +1505,9 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
         if (fileInput) fileInput.value = '';
         renderQueue();
         setViewer(null);
+        try {
+          localStorage.removeItem(WORK_STATE_KEY);
+        } catch {}
       });
 
       startBtn?.addEventListener('click', async () => {
@@ -1466,6 +1558,7 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
               item.savedPath = data.outputFile || '';
               done += 1;
               finishProgress(item, true);
+              saveWorkState();
 
               if (googleAccessToken) {
                 try {
@@ -1474,10 +1567,12 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
                   const driveFile = await uploadMarkdownToDrive(item);
                   item.driveFile = driveFile;
                   item.cloudError = `Sincronizado no Drive em ${DRIVE_ROOT_NAME}/${currentFolder}`;
+                  saveWorkState();
                 } catch (error) {
                   item.cloudError = error instanceof Error ? error.message : 'Falha ao enviar para o Google Drive.';
                   errors += 1;
                   item.status = 'done com aviso';
+                  saveWorkState();
                 }
               }
             }
@@ -1490,6 +1585,7 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
 
           setViewer(item);
           renderQueue();
+          saveWorkState();
         }
         stopProgressTimer();
         startBtn.textContent = 'Iniciar extração lote';
@@ -1533,6 +1629,7 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
         }
         updateDriveDestinationLabel();
         syncSheetFolderSelect();
+        saveWorkState();
         if (googleAccessToken) {
           void resolveDriveFolder(currentFolder, true);
         }
@@ -1540,6 +1637,7 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
 
       sheetFolderSelect?.addEventListener('change', () => {
         selectDestinationFolder(sheetFolderSelect.value || 'convertido');
+        saveWorkState();
         if (googleAccessToken) {
           void resolveDriveFolder(currentFolder, true);
         }
@@ -1599,6 +1697,7 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
           if (destinoSelect) destinoSelect.value = createdName;
           if (destinoAtual) destinoAtual.textContent = currentFolder;
           updateDriveDestinationLabel();
+          saveWorkState();
           void resolveDriveFolder(currentFolder, true);
           closeFolderModal();
         } catch (error) {
@@ -1632,9 +1731,13 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
           active.output = content;
           active.mdName = mdName;
           active.savedPath = data.path || '';
+          saveWorkState();
           if (googleAccessToken) {
             try {
-              await uploadMarkdownToDrive(active);
+              const driveFile = await uploadMarkdownToDrive(active);
+              active.driveFile = driveFile;
+              active.cloudError = `Sincronizado no Drive em ${DRIVE_ROOT_NAME}/${currentFolder}`;
+              saveWorkState();
               alert(`Alterações salvas em drive/md/${currentFolder}/${mdName} e enviadas para o Google Drive.`);
             } catch (error) {
               const message = error instanceof Error ? error.message : 'Erro desconhecido.';
@@ -1652,11 +1755,16 @@ const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
         await openCurrentDriveFolder();
       });
 
+      const restoredWork = restoreWorkState();
       renderDestinationFolders([], currentFolder);
       updateDriveDestinationLabel();
       refreshAuthState();
       renderQueue();
-      setViewer(null);
+      if (restoredWork && queue.length) {
+        setViewer(queue[selectedIndex] || queue[0]);
+      } else {
+        setViewer(null);
+      }
     </script>
   </body>
 </html>
