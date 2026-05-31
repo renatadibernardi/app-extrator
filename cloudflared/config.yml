@@ -4,4 +4,7 @@ ingress:
   - hostname: madrinhadosono.online
     path: /app-extrator.*
     service: http://localhost:3001
+  - hostname: madrinhadosono.online
+    path: /.*
+    service: http://localhost:3001
   - service: http_status:404
