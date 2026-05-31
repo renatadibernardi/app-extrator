@@ -17,9 +17,13 @@ export const GET: APIRoute = async ({ request, cookies }) => {
   const error = url.searchParams.get('error');
   const code = url.searchParams.get('code');
   const state = url.searchParams.get('state');
+  let returnTo = withAppBase('/doc-md');
+
+  if (!error && !code && !state) {
+    return Response.redirect(new URL(`${returnTo}?googleLogin=start-required`, request.url).toString(), 302);
+  }
 
   const stateCookie = await verifySignedValue(cookies.get(GOOGLE_OAUTH_STATE_COOKIE)?.value);
-  let returnTo = withAppBase('/doc-md');
 
   if (stateCookie) {
     try {
