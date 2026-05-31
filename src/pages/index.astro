@@ -1,4 +1,172 @@
 ---
-const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
-return Astro.redirect(`${basePath}/doc-md`);
+const BASE_PATH = import.meta.env.BASE_URL.replace(/\/$/, '');
+const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
 ---
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>App Extrator</title>
+    <meta
+      name="description"
+      content="Pagina inicial do App Extrator para acessar o fluxo de extracao e gestao de documentos."
+    />
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg-1: #090f23;
+        --bg-2: #050a19;
+        --panel: rgba(11, 17, 35, 0.84);
+        --line: rgba(124, 158, 255, 0.3);
+        --text: #eaf1ff;
+        --muted: #95a2be;
+        --brand: #7ecbff;
+        --brand-2: #9b7cff;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background:
+          radial-gradient(circle at 12% 12%, rgba(126, 203, 255, 0.15), transparent 34%),
+          radial-gradient(circle at 86% 18%, rgba(155, 124, 255, 0.18), transparent 30%),
+          linear-gradient(135deg, var(--bg-1) 0%, var(--bg-2) 60%, #060a18 100%);
+        color: var(--text);
+        font-family: "Inter", "Segoe UI", Arial, sans-serif;
+        padding: 20px;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background-image:
+          linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        background-size: 44px 44px;
+      }
+
+      main {
+        position: relative;
+        width: min(460px, calc(100vw - 32px));
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: var(--panel);
+        padding: 22px;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 20px 80px rgba(0, 0, 0, 0.35);
+      }
+
+      main::after {
+        content: "";
+        position: absolute;
+        inset: -1px;
+        border-radius: 16px;
+        border: 1px solid rgba(126, 203, 255, 0.5);
+        pointer-events: none;
+        opacity: 0.4;
+      }
+
+      .brand {
+        display: grid;
+        justify-items: center;
+        text-align: center;
+        gap: 12px;
+        margin-bottom: 18px;
+      }
+
+      .brand img {
+        width: 44px;
+        height: 44px;
+        border-radius: 11px;
+        background: #0a0f22;
+        padding: 6px;
+      }
+
+      .brand h1 {
+        margin: 0;
+        font-size: 1.35rem;
+        letter-spacing: -0.02em;
+        color: #f2f6ff;
+      }
+
+      .title {
+        margin: 2px 0 6px;
+        font-size: 1.6rem;
+        line-height: 1.1;
+        font-weight: 800;
+        color: #f9fbff;
+      }
+
+      p {
+        margin: 0 0 18px;
+        color: var(--muted);
+        line-height: 1.5;
+        font-size: 0.98rem;
+      }
+
+      .actions {
+        display: grid;
+        gap: 10px;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 42px;
+        border-radius: 12px;
+        padding: 10px 14px;
+        text-decoration: none;
+        font-weight: 700;
+        font-size: 0.96rem;
+        letter-spacing: 0.01em;
+        border: 1px solid transparent;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .btn-primary {
+        background: linear-gradient(120deg, var(--brand), var(--brand-2));
+        color: #091022;
+        box-shadow: 0 12px 32px rgba(155, 124, 255, 0.28);
+      }
+
+      .btn-secondary {
+        background: rgba(126, 203, 255, 0.1);
+        color: #d8ebff;
+        border-color: rgba(126, 203, 255, 0.4);
+      }
+
+      .btn:hover { transform: translateY(-1px); }
+
+      .footnote {
+        margin-top: 14px;
+        padding-top: 12px;
+        border-top: 1px solid rgba(148, 161, 190, 0.26);
+        color: #8d9cb6;
+        font-size: 0.78rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="brand">
+        <img src={appUrl('/brand/ncs-studio-mark.svg')} alt="NCS Studio" onerror="this.style.display='none'" />
+        <h1>App Extrator</h1>
+      </div>
+      <div class="title">Pagina principal</div>
+      <p>Escolha o ponto de entrada da aplicacao para acessar o fluxo de extracao e gestao de documentos de forma rapida.</p>
+      <div class="actions">
+        <a class="btn btn-primary" href={appUrl('/doc-md')}>Abrir extrator</a>
+        <a class="btn btn-secondary" href={appUrl('/proposta')}>Ver proposta</a>
+      </div>
+      <div class="footnote">Dominio de producao: <strong>madrinhadosono.online</strong></div>
+    </main>
+  </body>
+</html>
