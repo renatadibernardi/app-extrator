@@ -145,15 +145,22 @@ export function sanitizeReturnTo(value: string | null | undefined): string {
 }
 
 export function getGoogleOAuthRedirectUri(request: Request): string {
-  const explicit = getEnvVariable('GOOGLE_OAUTH_REDIRECT_URI');
-  if (explicit) {
-    return explicit;
-  }
-
+  const requestUrl = new URL(request.url);
   const defaultUrl = new URL(request.url);
   defaultUrl.pathname = withAppBase('/auth/google/callback');
   defaultUrl.search = '';
   defaultUrl.hash = '';
+
+  const explicit = getEnvVariable('GOOGLE_OAUTH_REDIRECT_URI');
+  if (explicit) {
+    try {
+      const explicitUrl = new URL(explicit);
+      if (explicitUrl.host === requestUrl.host) {
+        return explicitUrl.toString();
+      }
+    } catch {}
+  }
+
   return defaultUrl.toString();
 }
 
