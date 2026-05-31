@@ -1,6 +1,7 @@
 {
   "$schema": "../../node_modules/wrangler/config-schema.json",
   "name": "app-extrator-api",
+  "account_id": "43898724c74e4716e8b99ad6155c943c",
   "main": "src/index.ts",
   "compatibility_date": "2026-05-31",
   "compatibility_flags": ["nodejs_compat"],
