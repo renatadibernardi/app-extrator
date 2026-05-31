@@ -5,7 +5,7 @@ import { GOOGLE_SESSION_COOKIE, verifySignedValue } from '../../../lib/google-se
 export const prerender = false;
 
 export const GET: APIRoute = async ({ request, cookies }) => {
-  const sessionId = verifySignedValue(cookies.get(GOOGLE_SESSION_COOKIE)?.value);
+  const sessionId = await verifySignedValue(cookies.get(GOOGLE_SESSION_COOKIE)?.value);
   if (!sessionId) {
     return new Response(JSON.stringify({ ok: false, error: 'Faça login com o Google para listar o Drive.' }), {
       status: 401,

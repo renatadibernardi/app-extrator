@@ -1,4 +1,4 @@
-import crypto from 'node:crypto';
+import { env as cloudflareEnv } from 'cloudflare:workers';
 
 export const GOOGLE_AUTHORIZATION_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 export const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
@@ -13,9 +13,15 @@ export const GOOGLE_SCOPES = [
   'openid'
 ].join(' ');
 
+let runtimeEnv: Record<string, string | undefined> = {};
+
+export function setGoogleAuthEnv(env: Record<string, string | undefined> | undefined) {
+  runtimeEnv = env || {};
+}
+
 function getEnvVariable(name: string): string {
   const env = import.meta.env as Record<string, string | undefined>;
-  return process.env[name] || env[name] || '';
+  return runtimeEnv[name] || cloudflareEnv[name] || globalThis.process?.env?.[name] || env[name] || '';
 }
 
 export function getGoogleOAuthClientId(): string {
@@ -152,5 +158,7 @@ export function getGoogleOAuthRedirectUri(request: Request): string {
 }
 
 export function randomState(): string {
-  return crypto.randomBytes(16).toString('hex');
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
 }

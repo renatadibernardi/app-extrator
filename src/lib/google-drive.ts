@@ -1,4 +1,3 @@
-import crypto from 'node:crypto';
 import { GOOGLE_DRIVE_API_BASE, GOOGLE_DRIVE_UPLOAD_BASE, fetchGoogleProfile, refreshGoogleToken } from './google-auth';
 import { getGoogleSession, updateGoogleSession, type GoogleSessionRecord } from './google-session';
 
@@ -191,7 +190,7 @@ export async function uploadDriveBase64(sessionId: string, params: {
   mimeType?: string;
 }) {
   const boundary = `ncs-${crypto.randomUUID().replace(/-/g, '')}`;
-  const binary = Uint8Array.from(Buffer.from(params.base64, 'base64'));
+  const binary = Uint8Array.from(atob(params.base64), (char) => char.charCodeAt(0));
   const body = new Blob([
     `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n`,
     JSON.stringify({

@@ -18,7 +18,7 @@ export const GET: APIRoute = async ({ request, cookies }) => {
   const code = url.searchParams.get('code');
   const state = url.searchParams.get('state');
 
-  const stateCookie = verifySignedValue(cookies.get(GOOGLE_OAUTH_STATE_COOKIE)?.value);
+  const stateCookie = await verifySignedValue(cookies.get(GOOGLE_OAUTH_STATE_COOKIE)?.value);
   let returnTo = withAppBase('/doc-md');
 
   if (stateCookie) {
@@ -63,7 +63,7 @@ export const GET: APIRoute = async ({ request, cookies }) => {
 
   cookies.set(
     GOOGLE_SESSION_COOKIE,
-    signValue(sessionId),
+    await signValue(sessionId),
     getCookieOptions(isHttpsRequest(request.url), 60 * 60 * 24 * 30)
   );
 

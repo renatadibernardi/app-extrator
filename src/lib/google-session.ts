@@ -1,10 +1,7 @@
-import crypto from 'node:crypto';
-import fs from 'node:fs/promises';
-import path from 'node:path';
+import { env as cloudflareEnv } from 'cloudflare:workers';
 
 export const GOOGLE_SESSION_COOKIE = 'ncs_google_session';
 export const GOOGLE_OAUTH_STATE_COOKIE = 'ncs_google_oauth_state';
-const STORE_PATH = path.join(process.cwd(), '.data', 'google-sessions.json');
 
 export type GoogleSessionRecord = {
   accessToken: string;
@@ -16,93 +13,98 @@ export type GoogleSessionRecord = {
   updatedAt: string;
 };
 
-type GoogleSessionStore = {
-  sessions: Record<string, GoogleSessionRecord>;
-};
+let runtimeEnv: Record<string, string | undefined> = {};
+
+export function setGoogleSessionEnv(env: Record<string, string | undefined> | undefined) {
+  runtimeEnv = env || {};
+}
 
 function getSecret(): string {
   const env = import.meta.env as Record<string, string | undefined>;
   return (
-    process.env.GOOGLE_SESSION_SECRET ||
-    process.env.SESSION_SECRET ||
+    runtimeEnv.GOOGLE_SESSION_SECRET ||
+    runtimeEnv.SESSION_SECRET ||
+    cloudflareEnv.GOOGLE_SESSION_SECRET ||
+    cloudflareEnv.SESSION_SECRET ||
+    globalThis.process?.env?.GOOGLE_SESSION_SECRET ||
+    globalThis.process?.env?.SESSION_SECRET ||
     env.GOOGLE_SESSION_SECRET ||
     env.SESSION_SECRET ||
     'ncs-studio-google-session-secret'
   );
 }
 
-function hmac(value: string): string {
-  return crypto.createHmac('sha256', getSecret()).update(value).digest('base64url');
+function bytesToBase64Url(bytes: Uint8Array): string {
+  let binary = '';
+  bytes.forEach((byte) => {
+    binary += String.fromCharCode(byte);
+  });
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
 }
 
-export function signValue(value: string): string {
-  return `${value}.${hmac(value)}`;
+function base64UrlToBytes(value: string): Uint8Array {
+  const padded = value.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - (value.length % 4)) % 4);
+  const binary = atob(padded);
+  return Uint8Array.from(binary, (char) => char.charCodeAt(0));
 }
 
-export function verifySignedValue(signedValue: string | null | undefined): string | null {
+function encodeJson(value: unknown): string {
+  return bytesToBase64Url(new TextEncoder().encode(JSON.stringify(value)));
+}
+
+function decodeJson<T>(value: string): T | null {
+  try {
+    return JSON.parse(new TextDecoder().decode(base64UrlToBytes(value))) as T;
+  } catch {
+    return null;
+  }
+}
+
+async function hmac(value: string): Promise<string> {
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(getSecret()),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const signature = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(value));
+  return bytesToBase64Url(new Uint8Array(signature));
+}
+
+export async function signValue(value: string): Promise<string> {
+  return `${value}.${await hmac(value)}`;
+}
+
+export async function verifySignedValue(signedValue: string | null | undefined): Promise<string | null> {
   if (!signedValue) return null;
   const idx = signedValue.lastIndexOf('.');
   if (idx <= 0) return null;
   const value = signedValue.slice(0, idx);
   const signature = signedValue.slice(idx + 1);
-  const expected = hmac(value);
-  const left = Buffer.from(signature);
-  const right = Buffer.from(expected);
-  if (left.length !== right.length) return null;
-  if (!crypto.timingSafeEqual(left, right)) return null;
-  return value;
-}
-
-async function readStore(): Promise<GoogleSessionStore> {
-  try {
-    const raw = await fs.readFile(STORE_PATH, 'utf-8');
-    const parsed = JSON.parse(raw) as Partial<GoogleSessionStore>;
-    return {
-      sessions: parsed.sessions && typeof parsed.sessions === 'object' ? parsed.sessions : {}
-    };
-  } catch {
-    return { sessions: {} };
-  }
-}
-
-async function writeStore(store: GoogleSessionStore): Promise<void> {
-  await fs.mkdir(path.dirname(STORE_PATH), { recursive: true });
-  await fs.writeFile(STORE_PATH, JSON.stringify(store, null, 2), 'utf-8');
+  const expected = await hmac(value);
+  return signature === expected ? value : null;
 }
 
 export async function getGoogleSession(sessionId: string): Promise<GoogleSessionRecord | null> {
-  const store = await readStore();
-  return store.sessions[sessionId] || null;
+  return decodeJson<GoogleSessionRecord>(sessionId);
 }
 
 export async function createGoogleSession(record: GoogleSessionRecord): Promise<string> {
-  const store = await readStore();
-  const sessionId = crypto.randomUUID();
-  store.sessions[sessionId] = record;
-  await writeStore(store);
-  return sessionId;
+  return encodeJson(record);
 }
 
 export async function updateGoogleSession(sessionId: string, patch: Partial<GoogleSessionRecord>): Promise<GoogleSessionRecord | null> {
-  const store = await readStore();
-  const current = store.sessions[sessionId];
+  const current = await getGoogleSession(sessionId);
   if (!current) return null;
-  const next = {
+  return {
     ...current,
     ...patch,
     updatedAt: new Date().toISOString()
   };
-  store.sessions[sessionId] = next;
-  await writeStore(store);
-  return next;
 }
 
-export async function deleteGoogleSession(sessionId: string): Promise<void> {
-  const store = await readStore();
-  if (!store.sessions[sessionId]) return;
-  delete store.sessions[sessionId];
-  await writeStore(store);
-}
+export async function deleteGoogleSession(_sessionId: string): Promise<void> {}
 
 export function getCookieOptions(isSecure: boolean, maxAgeSeconds = 60 * 60 * 24 * 30) {
   return {

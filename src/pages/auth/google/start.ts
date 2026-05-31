@@ -31,7 +31,7 @@ export const GET: APIRoute = async ({ request, cookies }) => {
 
   cookies.set(
     GOOGLE_OAUTH_STATE_COOKIE,
-    signValue(JSON.stringify({ state, returnTo })),
+    await signValue(JSON.stringify({ state, returnTo })),
     getCookieOptions(isHttpsRequest(request.url), 10 * 60)
   );
 

@@ -5,7 +5,7 @@ import { GOOGLE_SESSION_COOKIE, verifySignedValue } from '../../../../lib/google
 export const prerender = false;
 
 export const GET: APIRoute = async ({ cookies }) => {
-  const sessionId = verifySignedValue(cookies.get(GOOGLE_SESSION_COOKIE)?.value);
+  const sessionId = await verifySignedValue(cookies.get(GOOGLE_SESSION_COOKIE)?.value);
   const status = await getGoogleAuthStatus(sessionId);
 
   return new Response(JSON.stringify({
