@@ -1,0 +1,866 @@
+---
+const DRIVE_ROOT_ID = '1ZVcO-yNceUveu8ORCZG9iOtkKHjSunmI';
+const DRIVE_ROOT_NAME = 'Espelho Documentos';
+const GOOGLE_OAUTH_CLIENT_ID = import.meta.env.PUBLIC_GOOGLE_OAUTH_CLIENT_ID || '';
+---
+
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Espelho Documentos | Google Drive</title>
+    <style>
+      :root {
+        --bg: #edf1eb;
+        --panel: #ffffff;
+        --line: #d2ddcb;
+        --text: #1b261a;
+        --muted: #60705f;
+        --brand: #1f5a2e;
+        --accent: #2f7b43;
+        --danger: #b03f3f;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(1200px 500px at 10% -10%, #f7fcf3 0%, transparent 60%),
+          radial-gradient(800px 400px at 90% 0%, #edf7ea 0%, transparent 65%),
+          var(--bg);
+      }
+      .layout { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+      .sidebar {
+        border-right: 1px solid var(--line);
+        background: #edf0ea;
+        padding: 16px 12px;
+      }
+      .brand { font-size: 28px; font-weight: 700; line-height: 1; color: var(--brand); }
+      .brand small { display:block; margin-top: 6px; letter-spacing: .12em; font-size: 10px; color: var(--muted); }
+      .menu { margin-top: 16px; display: grid; gap: 4px; }
+      .menu a {
+        text-decoration: none;
+        color: #334834;
+        font-size: 13px;
+        padding: 10px;
+        border-radius: 10px;
+      }
+      .menu a.active { background: #dce8d7; color: #184928; font-weight: 700; }
+
+      .main { padding: 10px; }
+      .topbar {
+        border: 1px solid var(--line);
+        background: var(--panel);
+        border-radius: 16px;
+        padding: 14px 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+      }
+      .title { font-size: 28px; font-weight: 700; color: var(--brand); }
+      .subtitle { font-size: 12px; color: var(--muted); margin-top: 2px; }
+      .chips { display:flex; gap:8px; flex-wrap: wrap; }
+      .chip {
+        border: 1px solid #c9d7c4;
+        background: #eef6ea;
+        color: var(--brand);
+        border-radius: 999px;
+        padding: 6px 10px;
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .chip.muted {
+        background: #f6f8f4;
+        color: #61705f;
+        border-color: #d4ddd0;
+        font-weight: 600;
+      }
+      .topbar-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+      .btn.auth {
+        background: #fff;
+        color: #1f5a2e;
+        border-color: #b9ccb4;
+        font-weight: 700;
+      }
+      .btn.auth.signed-in {
+        background: #1f5a2e;
+        color: #fff;
+        border-color: #1f5a2e;
+      }
+
+      .panel {
+        margin-top: 10px;
+        border: 1px solid var(--line);
+        background: var(--panel);
+        border-radius: 18px;
+        padding: 14px;
+      }
+      .toolbar {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 10px;
+        align-items: center;
+      }
+      .breadcrumb {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        font-size: 13px;
+      }
+      .crumb {
+        border: 1px solid #c8d5c1;
+        background: #f4f8f1;
+        color: #2a4f2f;
+        border-radius: 999px;
+        padding: 6px 10px;
+        cursor: pointer;
+      }
+      .crumb.active {
+        background: #e2f1de;
+        border-color: #9ec5a5;
+        color: #1c5d2c;
+        font-weight: 700;
+      }
+      .actions { display:flex; gap:8px; flex-wrap: wrap; justify-content: flex-end; }
+      .btn {
+        border: 1px solid var(--line);
+        background: #fff;
+        color: #2a392a;
+        border-radius: 11px;
+        padding: 9px 12px;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      .btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 700; }
+      .btn:disabled { opacity: .6; cursor: not-allowed; }
+
+      .status {
+        margin-top: 10px;
+        border: 1px dashed #bfd1b7;
+        background: #f6fbf4;
+        border-radius: 12px;
+        padding: 10px 12px;
+        font-size: 13px;
+        color: #305038;
+      }
+      .status.error {
+        border-color: #e2bcbc;
+        background: #fff4f4;
+        color: #8d2727;
+      }
+      .status.success {
+        border-color: #b8d8bc;
+        background: #f0faef;
+        color: #1f5a2e;
+      }
+
+      .columns {
+        margin-top: 10px;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+      .box {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 12px;
+        background: #fcfefb;
+      }
+      .box h2 {
+        margin: 0;
+        font-size: 19px;
+        color: #1f3521;
+      }
+      .box p {
+        margin: 4px 0 10px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .list {
+        display: grid;
+        gap: 8px;
+      }
+      .row {
+        border: 1px solid #d7e1d2;
+        border-radius: 10px;
+        background: #f7fbf5;
+        padding: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+      }
+      .row-main { min-width: 0; }
+      .row-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: #1f2e20;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .row-meta { margin-top: 3px; font-size: 11px; color: var(--muted); }
+      .row-actions { display:flex; gap:6px; flex-shrink: 0; }
+
+      .empty {
+        border: 1px dashed #c8d6c2;
+        border-radius: 12px;
+        background: #f9fcf7;
+        padding: 16px;
+        text-align: center;
+        color: #6b7869;
+        font-size: 13px;
+      }
+
+      .hidden { display: none !important; }
+
+      @media (min-width: 1024px) {
+        .columns { grid-template-columns: 1fr 1fr; }
+      }
+      @media (max-width: 980px) {
+        .layout { grid-template-columns: 1fr; }
+        .sidebar { display: none; }
+        .toolbar { grid-template-columns: 1fr; }
+        .actions { justify-content: flex-start; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="brand"><span id="clientNameEl">Conta Google</span><small>DOCUMENT MANAGEMENT PORTAL</small></div>
+        <nav class="menu">
+          <a href="/extrator">Painel de Indexação</a>
+          <a class="active" href="/doc-md">Espelho Documentos</a>
+          <a href="#">Tradutor Automático</a>
+          <a href="/extrator">Extração OCR</a>
+        </nav>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div>
+            <div class="title">Espelho Documentos</div>
+            <div class="subtitle">Site online conectado ao Google Drive via OAuth e Drive API.</div>
+          </div>
+          <div class="topbar-actions">
+            <div class="chips">
+              <span class="chip">Google Drive</span>
+              <span class="chip">/exec</span>
+              <span id="countChip" class="chip">0 itens</span>
+            </div>
+            <span id="authChip" class="chip muted">Google não conectado</span>
+            <button id="openDriveBtn" class="btn" type="button">Abrir pasta no Drive</button>
+            <button id="googleLoginBtn" class="btn auth" type="button">Conectar Google</button>
+          </div>
+        </header>
+
+        <section class="panel">
+          <div class="toolbar">
+            <div id="breadcrumb" class="breadcrumb"></div>
+            <div class="actions">
+              <button id="refreshBtn" class="btn" type="button">Recarregar</button>
+              <button id="newFolderBtn" class="btn" type="button">Nova pasta</button>
+              <button id="uploadBtn" class="btn primary" type="button">Enviar arquivo</button>
+              <input id="fileInput" class="hidden" type="file" />
+            </div>
+          </div>
+
+          <div id="statusBox" class="status">A carregar documentos...</div>
+
+          <div class="columns">
+            <section class="box">
+              <h2>Pastas</h2>
+              <p>Pastas dentro da localização atual.</p>
+              <div id="foldersList" class="list"></div>
+              <div id="foldersEmpty" class="empty hidden">Esta pasta ainda não tem documentos.</div>
+            </section>
+
+            <section class="box">
+              <h2>Arquivos</h2>
+              <p>Arquivos na pasta atual.</p>
+              <div id="filesList" class="list"></div>
+              <div id="filesEmpty" class="empty hidden">Esta pasta ainda não tem documentos.</div>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script define:vars={{ DRIVE_ROOT_ID, DRIVE_ROOT_NAME, GOOGLE_OAUTH_CLIENT_ID }}>
+      const ROOT_FOLDER_ID = DRIVE_ROOT_ID;
+      const ROOT_FOLDER_NAME = DRIVE_ROOT_NAME;
+      const GOOGLE_CLIENT_ID = GOOGLE_OAUTH_CLIENT_ID || '';
+      const DRIVE_API_BASE = 'https://www.googleapis.com/drive/v3';
+      const DRIVE_UPLOAD_BASE = 'https://www.googleapis.com/upload/drive/v3';
+      const GOOGLE_SCOPE = [
+        'https://www.googleapis.com/auth/drive',
+        'https://www.googleapis.com/auth/userinfo.profile',
+        'https://www.googleapis.com/auth/userinfo.email',
+        'openid'
+      ].join(' ');
+
+      const breadcrumbEl = document.getElementById('breadcrumb');
+      const statusBox = document.getElementById('statusBox');
+      const foldersListEl = document.getElementById('foldersList');
+      const filesListEl = document.getElementById('filesList');
+      const foldersEmptyEl = document.getElementById('foldersEmpty');
+      const filesEmptyEl = document.getElementById('filesEmpty');
+      const countChipEl = document.getElementById('countChip');
+      const fileInputEl = document.getElementById('fileInput');
+      const refreshBtn = document.getElementById('refreshBtn');
+      const newFolderBtn = document.getElementById('newFolderBtn');
+      const uploadBtn = document.getElementById('uploadBtn');
+      const authChipEl = document.getElementById('authChip');
+      const openDriveBtn = document.getElementById('openDriveBtn');
+      const googleLoginBtn = document.getElementById('googleLoginBtn');
+      const clientNameEl = document.getElementById('clientNameEl');
+
+      let breadcrumb = [{ id: ROOT_FOLDER_ID, name: ROOT_FOLDER_NAME }];
+      let currentFolderId = ROOT_FOLDER_ID;
+      let googleAccessToken = sessionStorage.getItem('docmd_google_access_token') || '';
+      let googleUserLabel = sessionStorage.getItem('docmd_google_user_label') || '';
+      let googleTokenClient = null;
+      let googleIdentityPromise = null;
+
+      function setStatus(message, type = 'default') {
+        statusBox.textContent = message;
+        statusBox.className = `status${type === 'default' ? '' : ` ${type}`}`;
+      }
+
+      function setAuthState(nextAccessToken, nextUserLabel = '') {
+        googleAccessToken = nextAccessToken || '';
+        googleUserLabel = nextUserLabel || '';
+
+        if (googleAccessToken) {
+          sessionStorage.setItem('docmd_google_access_token', googleAccessToken);
+          sessionStorage.setItem('docmd_google_user_label', googleUserLabel || 'Google Drive');
+        } else {
+          sessionStorage.removeItem('docmd_google_access_token');
+          sessionStorage.removeItem('docmd_google_user_label');
+        }
+
+        renderAuthState();
+      }
+
+      function openCurrentDriveFolder() {
+        const targetId = currentFolderId || ROOT_FOLDER_ID;
+        window.open(`https://drive.google.com/drive/folders/${targetId}`, '_blank', 'noopener');
+      }
+
+      function renderAuthState() {
+        const signedIn = Boolean(googleAccessToken);
+
+        if (authChipEl) {
+          authChipEl.textContent = signedIn
+            ? `Conectado${googleUserLabel ? ` · ${googleUserLabel}` : ''}`
+            : GOOGLE_CLIENT_ID
+              ? 'Google não conectado'
+              : 'Configure o Client ID';
+          authChipEl.className = signedIn ? 'chip' : 'chip muted';
+        }
+
+        if (googleLoginBtn) {
+          googleLoginBtn.textContent = signedIn ? 'Desconectar' : 'Conectar Google';
+          googleLoginBtn.className = signedIn ? 'btn auth signed-in' : 'btn auth';
+          googleLoginBtn.disabled = !GOOGLE_CLIENT_ID && !signedIn;
+        }
+
+        if (openDriveBtn) {
+          openDriveBtn.disabled = false;
+        }
+
+        if (clientNameEl) {
+          clientNameEl.textContent = signedIn ? (googleUserLabel || 'Conta Google') : 'Conta Google';
+        }
+      }
+
+      function setLoading(isLoading) {
+        refreshBtn.disabled = isLoading;
+        newFolderBtn.disabled = isLoading;
+        uploadBtn.disabled = isLoading;
+      }
+
+      function bytesToLabel(bytes) {
+        const value = Number(bytes || 0);
+        if (!value) return '0 B';
+        const units = ['B', 'KB', 'MB', 'GB'];
+        const index = Math.min(Math.floor(Math.log(value) / Math.log(1024)), units.length - 1);
+        const size = value / Math.pow(1024, index);
+        return `${size.toFixed(size >= 10 || index === 0 ? 0 : 1)} ${units[index]}`;
+      }
+
+      function formatDate(dateString) {
+        if (!dateString) return 'Sem data';
+        const dt = new Date(dateString);
+        if (Number.isNaN(dt.getTime())) return 'Sem data';
+        return dt.toLocaleString('pt-BR');
+      }
+
+      function buildGoogleHeaders(extraHeaders = {}) {
+        return {
+          Authorization: `Bearer ${googleAccessToken}`,
+          ...extraHeaders
+        };
+      }
+
+      async function googleApiFetch(path, options = {}) {
+        if (!googleAccessToken) {
+          throw new Error('Faça login com o Google para usar o Drive.');
+        }
+
+        const url = new URL(`${DRIVE_API_BASE}${path}`);
+        const { params, headers, ...init } = options;
+
+        Object.entries(params || {}).forEach(([key, value]) => {
+          if (value !== undefined && value !== null && value !== '') {
+            url.searchParams.set(key, String(value));
+          }
+        });
+
+        const response = await fetch(url, {
+          ...init,
+          headers: buildGoogleHeaders(headers)
+        });
+
+        if (response.status === 401) {
+          setAuthState('');
+          throw new Error('Sessão do Google expirada. Faça login novamente.');
+        }
+
+        return response;
+      }
+
+      async function googleUploadFetch(path, options = {}) {
+        if (!googleAccessToken) {
+          throw new Error('Faça login com o Google para usar o Drive.');
+        }
+
+        const url = new URL(`${DRIVE_UPLOAD_BASE}${path}`);
+        const { params, headers, ...init } = options;
+
+        Object.entries(params || {}).forEach(([key, value]) => {
+          if (value !== undefined && value !== null && value !== '') {
+            url.searchParams.set(key, String(value));
+          }
+        });
+
+        const response = await fetch(url, {
+          ...init,
+          headers: buildGoogleHeaders(headers)
+        });
+
+        if (response.status === 401) {
+          setAuthState('');
+          throw new Error('Sessão do Google expirada. Faça login novamente.');
+        }
+
+        return response;
+      }
+
+      async function fetchGoogleProfile() {
+        const response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+          headers: buildGoogleHeaders()
+        });
+
+        if (!response.ok) {
+          return { label: 'Google Drive' };
+        }
+
+        const data = await response.json();
+        const label = data?.name || data?.email || 'Google Drive';
+        return { label };
+      }
+
+      async function chamarGoogleDrive(action, payload = {}) {
+        if (action === 'list') {
+          const folderId = payload.folderId || ROOT_FOLDER_ID;
+          const params = new URLSearchParams({
+            q: `'${folderId}' in parents and trashed = false`,
+            fields: 'files(id,name,mimeType,size,modifiedTime,webViewLink,webContentLink),nextPageToken',
+            orderBy: 'folder,name',
+            pageSize: '200',
+            supportsAllDrives: 'true',
+            includeItemsFromAllDrives: 'true'
+          });
+
+          const response = await googleApiFetch(`/files?${params.toString()}`);
+          if (!response.ok) {
+            const text = await response.text();
+            throw new Error(text || 'Falha ao listar pastas.');
+          }
+
+          const data = await response.json();
+          const files = Array.isArray(data.files) ? data.files : [];
+          return {
+            success: true,
+            folders: files.filter((item) => item.mimeType === 'application/vnd.google-apps.folder'),
+            files: files.filter((item) => item.mimeType !== 'application/vnd.google-apps.folder'),
+            currentFolder: {
+              id: folderId,
+              name: payload.folderName || (folderId === ROOT_FOLDER_ID ? ROOT_FOLDER_NAME : 'Pasta')
+            }
+          };
+        }
+
+        if (action === 'createFolder') {
+          const response = await googleApiFetch('/files', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json; charset=UTF-8'
+            },
+            body: JSON.stringify({
+              name: payload.name,
+              mimeType: 'application/vnd.google-apps.folder',
+              parents: [payload.parentId || ROOT_FOLDER_ID]
+            })
+          });
+
+          if (!response.ok) {
+            const text = await response.text();
+            throw new Error(text || 'Falha ao criar pasta.');
+          }
+
+          return response.json();
+        }
+
+        if (action === 'upload') {
+          const boundary = `ncs-${crypto.randomUUID().replace(/-/g, '')}`;
+          const binary = payload.base64 ? Uint8Array.from(atob(payload.base64), (ch) => ch.charCodeAt(0)) : new Uint8Array();
+          const body = new Blob([
+            `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n`,
+            JSON.stringify({
+              name: payload.filename,
+              parents: [payload.folderId || ROOT_FOLDER_ID]
+            }),
+            `\r\n--${boundary}\r\nContent-Type: ${payload.mimeType || 'application/octet-stream'}\r\n\r\n`,
+            binary,
+            `\r\n--${boundary}--`
+          ], {
+            type: `multipart/related; boundary=${boundary}`
+          });
+
+          const response = await googleUploadFetch('/files', {
+            method: 'POST',
+            params: {
+              uploadType: 'multipart',
+              fields: 'id,name,mimeType,size,modifiedTime,webViewLink,webContentLink'
+            },
+            headers: {
+              'Content-Type': `multipart/related; boundary=${boundary}`
+            },
+            body
+          });
+
+          if (!response.ok) {
+            const text = await response.text();
+            throw new Error(text || 'Falha ao enviar arquivo.');
+          }
+
+          return response.json();
+        }
+
+        throw new Error(`Ação do Google Drive não suportada: ${action}.`);
+      }
+
+      async function chamarDrive(action, payload = {}) {
+        return chamarGoogleDrive(action, payload);
+      }
+
+      function renderBreadcrumb() {
+        breadcrumbEl.innerHTML = '';
+        breadcrumb.forEach((item, index) => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = `crumb${index === breadcrumb.length - 1 ? ' active' : ''}`;
+          button.textContent = item.name;
+          button.addEventListener('click', async () => {
+            if (index === breadcrumb.length - 1) return;
+            breadcrumb = breadcrumb.slice(0, index + 1);
+            currentFolderId = breadcrumb[breadcrumb.length - 1].id;
+            await carregarPasta(currentFolderId, { fromBreadcrumb: true });
+          });
+          breadcrumbEl.appendChild(button);
+        });
+      }
+
+      function renderFolders(folders) {
+        foldersListEl.innerHTML = '';
+        foldersEmptyEl.classList.toggle('hidden', folders.length > 0);
+
+        folders.forEach((folder) => {
+          const row = document.createElement('div');
+          row.className = 'row';
+          row.innerHTML = `
+            <div class="row-main">
+              <div class="row-title">${folder.name}</div>
+              <div class="row-meta">Pasta</div>
+            </div>
+            <div class="row-actions">
+              <button class="btn" type="button">Entrar</button>
+            </div>
+          `;
+          row.querySelector('button')?.addEventListener('click', async () => {
+            breadcrumb.push({ id: folder.id, name: folder.name || 'Sem nome' });
+            currentFolderId = folder.id;
+            await carregarPasta(folder.id);
+          });
+          foldersListEl.appendChild(row);
+        });
+      }
+
+      function renderFiles(files) {
+        filesListEl.innerHTML = '';
+        filesEmptyEl.classList.toggle('hidden', files.length > 0);
+
+        files.forEach((file) => {
+          const row = document.createElement('div');
+          row.className = 'row';
+
+          const fileUrl = file.webViewLink || file.webContentLink || file.url || file.downloadUrl || (file.id ? `https://drive.google.com/file/d/${file.id}/view` : '');
+          row.innerHTML = `
+            <div class="row-main">
+              <div class="row-title">${file.name}</div>
+              <div class="row-meta">${file.mimeType || 'arquivo'} • ${bytesToLabel(file.size)} • ${formatDate(file.modifiedTime || file.modifiedDate)}</div>
+            </div>
+            <div class="row-actions">
+              <button class="btn" type="button" ${fileUrl ? '' : 'disabled'}>Abrir</button>
+            </div>
+          `;
+
+          row.querySelector('button')?.addEventListener('click', () => {
+            if (!fileUrl) return;
+            window.open(fileUrl, '_blank', 'noopener');
+          });
+
+          filesListEl.appendChild(row);
+        });
+      }
+
+      async function fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const result = String(reader.result || '');
+            const base64 = result.includes(',') ? result.split(',')[1] : result;
+            resolve(base64);
+          };
+          reader.onerror = () => reject(new Error('Falha ao converter arquivo para base64.'));
+          reader.readAsDataURL(file);
+        });
+      }
+
+      async function ensureGoogleIdentity() {
+        if (!GOOGLE_CLIENT_ID) {
+          throw new Error('Defina PUBLIC_GOOGLE_OAUTH_CLIENT_ID para ativar o login.');
+        }
+
+        if (window.google?.accounts?.oauth2) {
+          if (!googleTokenClient) {
+            googleTokenClient = window.google.accounts.oauth2.initTokenClient({
+              client_id: GOOGLE_CLIENT_ID,
+              scope: GOOGLE_SCOPE,
+              callback: () => {}
+            });
+          }
+          return;
+        }
+
+        if (!googleIdentityPromise) {
+          googleIdentityPromise = new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://accounts.google.com/gsi/client';
+            script.async = true;
+            script.defer = true;
+            script.onload = () => resolve();
+            script.onerror = () => reject(new Error('Falha ao carregar a biblioteca de login do Google.'));
+            document.head.appendChild(script);
+          });
+        }
+
+        await googleIdentityPromise;
+
+        if (!window.google?.accounts?.oauth2) {
+          throw new Error('Biblioteca de login do Google indisponível.');
+        }
+
+        googleTokenClient = window.google.accounts.oauth2.initTokenClient({
+          client_id: GOOGLE_CLIENT_ID,
+          scope: GOOGLE_SCOPE,
+          callback: () => {}
+        });
+      }
+
+      async function carregarPasta(folderId, options = {}) {
+        setLoading(true);
+        setStatus(googleAccessToken ? 'A carregar documentos do Google Drive...' : 'A carregar documentos...');
+        try {
+          const payload = {};
+          if (folderId && folderId !== ROOT_FOLDER_ID) {
+            payload.folderId = folderId;
+            payload.folderName = breadcrumb[breadcrumb.length - 1]?.name || 'Pasta';
+          }
+
+          const data = await chamarDrive('list', payload);
+          const folders = Array.isArray(data.folders) ? data.folders : [];
+          const files = Array.isArray(data.files) ? data.files : [];
+
+          if (!options.fromBreadcrumb && data.currentFolder?.id) {
+            const last = breadcrumb[breadcrumb.length - 1];
+            if (!last || last.id !== data.currentFolder.id) {
+              breadcrumb.push({
+                id: data.currentFolder.id,
+                name: data.currentFolder.name || 'Pasta'
+              });
+            } else if (data.currentFolder.name) {
+              last.name = data.currentFolder.name;
+            }
+          }
+
+          if (breadcrumb.length === 0) {
+            breadcrumb = [{ id: ROOT_FOLDER_ID, name: ROOT_FOLDER_NAME }];
+          }
+
+          renderBreadcrumb();
+          renderFolders(folders);
+          renderFiles(files);
+          countChipEl.textContent = `${folders.length + files.length} itens`;
+          setStatus(
+            googleAccessToken
+              ? 'Google Drive conectado e documentos carregados com sucesso.'
+              : 'Documentos carregados com sucesso.',
+            'success'
+          );
+        } catch (error) {
+          setStatus(error instanceof Error ? error.message : 'Erro ao carregar documentos.', 'error');
+          renderFolders([]);
+          renderFiles([]);
+          countChipEl.textContent = '0 itens';
+        } finally {
+          setLoading(false);
+        }
+      }
+
+      refreshBtn?.addEventListener('click', async () => {
+        await carregarPasta(currentFolderId, { fromBreadcrumb: true });
+      });
+
+      googleLoginBtn?.addEventListener('click', async () => {
+        if (googleAccessToken) {
+          const token = googleAccessToken;
+          setAuthState('');
+          if (window.google?.accounts?.oauth2) {
+            window.google.accounts.oauth2.revoke(token, () => {});
+          }
+          setStatus('Google desconectado.', 'success');
+          await carregarPasta(currentFolderId, { fromBreadcrumb: true });
+          return;
+        }
+
+        if (!GOOGLE_CLIENT_ID) {
+          setStatus('Defina PUBLIC_GOOGLE_OAUTH_CLIENT_ID para ativar o login do Google.', 'error');
+          return;
+        }
+
+        setStatus('A abrir login do Google...');
+        try {
+          await ensureGoogleIdentity();
+
+          const tokenResponse = await new Promise((resolve, reject) => {
+            googleTokenClient.callback = (response) => {
+              if (response?.access_token) {
+                resolve(response);
+                return;
+              }
+
+              reject(new Error(response?.error || 'Não foi possível autenticar no Google.'));
+            };
+
+            googleTokenClient.requestAccessToken({
+              prompt: 'consent'
+            });
+          });
+
+          const profile = await fetchGoogleProfile();
+          setAuthState(tokenResponse.access_token, profile.label);
+          setStatus('Google conectado com sucesso.', 'success');
+          await carregarPasta(currentFolderId, { fromBreadcrumb: true });
+        } catch (error) {
+          setStatus(error instanceof Error ? error.message : 'Falha no login do Google.', 'error');
+        }
+      });
+
+      openDriveBtn?.addEventListener('click', () => {
+        openCurrentDriveFolder();
+      });
+
+      newFolderBtn?.addEventListener('click', async () => {
+        const name = window.prompt('Nome da nova pasta:');
+        if (!name || !name.trim()) return;
+
+        setLoading(true);
+        setStatus('A criar pasta...');
+        try {
+          await chamarDrive('createFolder', {
+            name: name.trim(),
+            parentId: currentFolderId
+          });
+          setStatus('Pasta criada com sucesso.', 'success');
+          await carregarPasta(currentFolderId, { fromBreadcrumb: true });
+        } catch (error) {
+          setStatus(error instanceof Error ? error.message : 'Erro ao criar pasta.', 'error');
+        } finally {
+          setLoading(false);
+        }
+      });
+
+      uploadBtn?.addEventListener('click', () => {
+        fileInputEl?.click();
+      });
+
+      fileInputEl?.addEventListener('change', async (event) => {
+        const input = event.currentTarget;
+        const file = input?.files?.[0];
+        if (!file) return;
+
+        setLoading(true);
+        setStatus('A enviar arquivo...');
+        try {
+          const base64 = await fileToBase64(file);
+          await chamarDrive('upload', {
+            filename: file.name,
+            mimeType: file.type || 'application/octet-stream',
+            base64,
+            folderId: currentFolderId
+          });
+          setStatus('Arquivo enviado com sucesso.', 'success');
+          await carregarPasta(currentFolderId, { fromBreadcrumb: true });
+        } catch (error) {
+          setStatus(error instanceof Error ? error.message : 'Erro ao enviar arquivo.', 'error');
+        } finally {
+          input.value = '';
+          setLoading(false);
+        }
+      });
+
+      renderBreadcrumb();
+      renderAuthState();
+      if (googleAccessToken) {
+        carregarPasta(ROOT_FOLDER_ID, { fromBreadcrumb: true });
+      } else {
+        renderFolders([]);
+        renderFiles([]);
+        countChipEl.textContent = '0 itens';
+        setStatus('Conecte o Google para carregar as pastas e os arquivos.', 'default');
+      }
+    </script>
+  </body>
+</html>

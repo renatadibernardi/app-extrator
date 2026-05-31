@@ -1,0 +1,649 @@
+---
+const ano = new Date().getFullYear();
+
+const dores = [
+  { dor: "WhatsApp caótico com clientes cobrando status de processo sem histórico", solucao: "CRM jurídico + atendimento centralizado com IA e transferência para o advogado responsável" },
+  { dor: "Clientes sumindo antes de fechar o contrato", solucao: "Fluxo automático de nutrição e follow-up (24h, 48h, 7 dias após consulta)" },
+  { dor: "Consultas iniciais agendadas por telefone ou DM sem controle", solucao: "Agendamento online integrado ao WhatsApp com confirmação automática" },
+  { dor: "Documentação pendente travando o processo — cliente não entrega", solucao: "Régua automática de cobrança de documentos via WhatsApp com lembretes periódicos" },
+  { dor: "Sem atualização proativa sobre andamento do processo", solucao: "Fluxo automático de status: cliente recebe update sem precisar ligar para o escritório" },
+  { dor: "Captação 100% dependente de indicação", solucao: "Automação de indicação + presença digital + tráfego pago segmentado por área do direito" },
+  { dor: "Equipe sobrecarregada com triagem, FAQ e cobranças manuais", solucao: "IA resolve triagem jurídica, FAQ de processo, horários e documentação" },
+];
+
+const pacotes = [
+  {
+    nome: "Start",
+    setup: "R$ 1.800",
+    mrr: "R$ 247/mês",
+    cor: "#06b6d4",
+    indicado: "Advogado autônomo, OAB solo, escritório com 1–2 profissionais",
+    items: [
+      "WhatsApp centralizado com triagem automática (área do direito + documentação + FAQ)",
+      "Confirmação automática de consulta inicial (48h e 2h antes)",
+      "Régua de cobrança de documentos pendentes (lembretes D+3, D+7, D+14)",
+      "CRM básico: cadastro de clientes, área, status e próximo passo",
+      "Integração com Google Agenda ou sistema de gestão do escritório",
+      "Relatório mensal de consultas, conversões e documentos pendentes",
+    ],
+  },
+  {
+    nome: "Growth",
+    setup: "R$ 4.500",
+    mrr: "R$ 597/mês",
+    cor: "#a855f7",
+    destaque: true,
+    indicado: "Escritório com 3–8 advogados, múltiplas áreas, equipe de atendimento",
+    items: [
+      "Tudo do Start, mais:",
+      "Fluxo de nutrição pós-consulta (D+1, D+3, D+7 sem fechar contrato)",
+      "Atualização automática de status de processo via WhatsApp",
+      "CRM completo: funil lead → consulta → contrato → processo → encerramento",
+      "Integração com sistemas jurídicos (Juris, Advwin, Projuris, Legalbot)",
+      "Gestão de avaliações Google Meu Negócio automática pós-encerramento",
+      "Painel de métricas: taxa de conversão, receita por área, clientes ativos",
+      "Suporte WhatsApp com SLA 24h",
+    ],
+  },
+  {
+    nome: "Scale",
+    setup: "R$ 9.000",
+    mrr: "R$ 1.497/mês",
+    cor: "#f97316",
+    indicado: "Escritório com 8+ advogados, múltiplas unidades ou áreas especializadas",
+    items: [
+      "Tudo do Growth, mais:",
+      "Agente de IA treinado com FAQ jurídico do escritório (áreas, honorários, prazos, documentação)",
+      "Triagem inteligente por área do direito e urgência",
+      "Integração financeira e relatório de receita por advogado e área",
+      "Automação de pós-encerramento: pesquisa de satisfação (NPS) e pedido de indicação",
+      "Fluxo de captação via tráfego pago integrado ao CRM",
+      "Gestão de multi-unidades ou parceiros",
+      "Reunião mensal de resultado e plano de evolução",
+    ],
+  },
+];
+
+const fluxos = [
+  {
+    titulo: "Consulta Inicial",
+    icone: "⚖️",
+    cor: "#06b6d4",
+    steps: [
+      "Lead entra via site, Instagram ou indicação",
+      "WhatsApp automático: triagem de área e urgência",
+      "Agendamento de consulta com confirmação 48h e 2h antes",
+      "NÃO comparece → remarcação automática + alerta",
+      "Pós-consulta → fluxo de conversão para contrato",
+    ],
+  },
+  {
+    titulo: "Cobrança de Documentos",
+    icone: "📄",
+    cor: "#a855f7",
+    steps: [
+      "Contrato assinado → checklist de documentos gerado",
+      "D+3: lembrete WhatsApp com lista pendente",
+      "D+7: follow-up com urgência (prazo do processo)",
+      "D+14: alerta para advogado responsável",
+      "Documento recebido → confirmação automática ao cliente",
+    ],
+  },
+  {
+    titulo: "Status do Processo",
+    icone: "🔔",
+    cor: "#f97316",
+    steps: [
+      "Movimentação no tribunal ou etapa concluída",
+      "WhatsApp automático ao cliente com atualização",
+      "Cliente reage → encaminha para advogado com contexto",
+      "Sem movimentação há 30 dias → mensagem proativa de acompanhamento",
+    ],
+  },
+  {
+    titulo: "Pós-Encerramento",
+    icone: "⭐",
+    cor: "#22c55e",
+    steps: [
+      "Processo encerrado / causa concluída",
+      "T+24h: mensagem de encerramento e agradecimento",
+      "T+48h: pesquisa de satisfação (1–5 estrelas)",
+      "Nota 4–5 → solicita avaliação Google + pedido de indicação",
+      "Nota 1–3 → alerta gestão + fluxo de recuperação",
+      "T+6 meses → mensagem de recontato (nova demanda?)",
+    ],
+  },
+];
+
+const objecoes = [
+  { obj: "Já tenho um sistema jurídico (Juris, Advwin…)", resp: "Ótimo — integramos ao seu sistema. O que ele não faz é automação de WhatsApp, IA de triagem, cobrança de documentos e fluxo de conversão de consulta em contrato." },
+  { obj: "Minha equipe já cuida do atendimento", resp: "Com automação, sua equipe para de responder as mesmas perguntas todo dia e foca em causas. O escritório responde clientes fora do horário comercial sem custo extra." },
+  { obj: "Direito exige toque humano — IA não funciona aqui", resp: "A IA resolve triagem, FAQ e cobranças. Tudo que exige análise jurídica vai direto para o advogado com contexto completo do cliente. Você valida cada fluxo antes de ir ao ar." },
+  { obj: "Não sei se vale o investimento", resp: "Um escritório que perde 3 consultas iniciais por mês por falta de follow-up, com honorário médio de R$3.000, perde R$9.000/mês. O pacote Start custa R$247/mês." },
+  { obj: "Não tenho tempo para implantar", resp: "A implementação é feita pela NCS-Studio. Você valida. Em 2–3 semanas o sistema está rodando sem interromper a operação do escritório." },
+  { obj: "LGPD e sigilo profissional — tenho receio", resp: "Usamos API oficial da Meta. Nenhum dado de processo ou cliente é armazenado no chatbot — tudo fica no seu sistema jurídico. Conformidade com o sigilo da OAB." },
+];
+---
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NCS-Studio — Proposta para Escritórios de Advocacia</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    :root {
+      --bg: #030612;
+      --surface: rgba(8,14,36,0.9);
+      --border: rgba(255,255,255,0.08);
+      --border-blue: rgba(59,130,246,0.35);
+      --text: #f0f6ff;
+      --muted: #8fa3c4;
+      --soft: #c8d9f5;
+      --blue: #3b82f6;
+      --cyan: #06b6d4;
+      --purple: #a855f7;
+      --green: #22c55e;
+      --orange: #f97316;
+      --gold: #d4a843;
+      --radius: 16px;
+      --max: 1100px;
+    }
+
+    body {
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 10% 10%, rgba(212,168,67,0.15), transparent 30%),
+        radial-gradient(circle at 85% 15%, rgba(59,130,246,0.18), transparent 28%),
+        radial-gradient(circle at 50% 90%, rgba(6,182,212,0.08), transparent 30%),
+        linear-gradient(135deg, #020510 0%, #06080e 50%, #020710 100%);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed; inset: 0;
+      pointer-events: none; opacity: 0.2;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+      background-size: 40px 40px;
+      mask-image: radial-gradient(circle at center, black 0 50%, transparent 85%);
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    .wrap { max-width: var(--max); margin: 0 auto; padding: 0 24px; }
+
+    /* ── HEADER ── */
+    .site-header {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(3,6,18,0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+    .site-header .wrap {
+      display: flex; align-items: center; gap: 16px;
+      padding-top: 14px; padding-bottom: 14px;
+    }
+    .logo {
+      font-size: 1.25rem; font-weight: 900;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, var(--gold), var(--cyan));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .logo span { color: var(--cyan); }
+    .header-badge {
+      margin-left: auto;
+      background: rgba(212,168,67,0.1);
+      border: 1px solid rgba(212,168,67,0.3);
+      color: var(--gold);
+      font-size: 0.7rem; font-weight: 700;
+      padding: 4px 12px; border-radius: 999px;
+      text-transform: uppercase; letter-spacing: 0.1em;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      padding: 80px 0 60px;
+      text-align: center;
+    }
+    .eyebrow {
+      display: inline-block;
+      font-size: 0.72rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.14em;
+      color: var(--gold);
+      background: rgba(212,168,67,0.1);
+      border: 1px solid rgba(212,168,67,0.25);
+      padding: 5px 16px; border-radius: 999px;
+      margin-bottom: 24px;
+    }
+    h1 {
+      font-size: clamp(2rem, 5vw, 3.4rem);
+      font-weight: 900; line-height: 1.1;
+      letter-spacing: -1.5px;
+      margin-bottom: 20px;
+    }
+    .grad {
+      background: linear-gradient(135deg, var(--gold) 0%, var(--cyan) 60%, var(--purple) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero-sub {
+      font-size: 1.1rem; color: var(--muted);
+      max-width: 600px; margin: 0 auto 40px;
+      line-height: 1.65;
+    }
+    .hero-stats {
+      display: flex; flex-wrap: wrap; gap: 12px;
+      justify-content: center;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 32px;
+      max-width: 700px; margin: 0 auto;
+    }
+    .stat { text-align: center; padding: 0 20px; }
+    .stat strong {
+      display: block; font-size: 1.75rem; font-weight: 900;
+      background: linear-gradient(135deg, var(--gold), var(--cyan));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .stat span { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+
+    /* ── SECTIONS ── */
+    section { padding: 72px 0; }
+    .section-label {
+      font-size: 0.68rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.16em;
+      color: var(--gold); margin-bottom: 10px;
+    }
+    .section-title {
+      font-size: clamp(1.5rem, 3vw, 2.2rem);
+      font-weight: 800; letter-spacing: -0.5px;
+      line-height: 1.2; margin-bottom: 12px;
+    }
+    .section-desc { color: var(--muted); margin-bottom: 40px; font-size: 1rem; }
+
+    /* ── DORES ── */
+    .dores-grid { display: flex; flex-direction: column; gap: 10px; }
+    .dor-card {
+      display: grid; grid-template-columns: 1fr 1fr;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .dor-left {
+      padding: 16px 20px;
+      border-right: 1px solid var(--border);
+      display: flex; align-items: center; gap: 12px;
+    }
+    .dor-left::before {
+      content: "✗";
+      color: #ef4444; font-weight: 700; font-size: 1rem;
+      flex-shrink: 0;
+    }
+    .dor-left p { font-size: 0.9rem; color: var(--soft); }
+    .dor-right {
+      padding: 16px 20px;
+      background: rgba(212,168,67,0.04);
+      display: flex; align-items: center; gap: 12px;
+    }
+    .dor-right::before {
+      content: "✓";
+      color: var(--gold); font-weight: 700; font-size: 1rem;
+      flex-shrink: 0;
+    }
+    .dor-right p { font-size: 0.9rem; color: var(--text); }
+
+    /* ── ROI BOX ── */
+    .roi-box {
+      display: flex; gap: 20px; align-items: flex-start;
+      background: rgba(212,168,67,0.06);
+      border: 1px solid rgba(212,168,67,0.25);
+      border-radius: var(--radius);
+      padding: 24px 28px;
+      margin-top: 32px;
+    }
+    .roi-icon { font-size: 2rem; flex-shrink: 0; }
+    .roi-box h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 8px; color: var(--gold); }
+    .roi-box p { font-size: 0.9rem; color: var(--muted); line-height: 1.6; }
+    .roi-box strong { color: var(--text); }
+
+    /* ── PACOTES ── */
+    .pacotes-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    .pacote-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      position: relative;
+      display: flex; flex-direction: column;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .pacote-card.destaque {
+      border-color: rgba(168,85,247,0.5);
+      box-shadow: 0 0 40px rgba(168,85,247,0.12);
+    }
+    .pacote-card:hover { transform: translateY(-3px); }
+    .pacote-top { margin-bottom: 20px; }
+    .pacote-badge {
+      display: inline-block;
+      font-size: 0.7rem; font-weight: 700;
+      padding: 3px 10px; border-radius: 999px;
+      margin-bottom: 12px;
+    }
+    .pacote-name { font-size: 1.3rem; font-weight: 800; margin-bottom: 10px; }
+    .pacote-price { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+    .price-setup { font-size: 1.5rem; font-weight: 900; }
+    .price-sep { font-size: 0.8rem; color: var(--muted); }
+    .price-mrr { font-size: 1rem; font-weight: 700; color: var(--muted); }
+    .pacote-indicado { font-size: 0.78rem; color: var(--muted); margin-top: 8px; }
+    .pacote-items { flex: 1; display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+    .pacote-item {
+      display: flex; align-items: flex-start; gap: 8px;
+      font-size: 0.85rem; color: var(--soft); line-height: 1.4;
+    }
+    .pacote-item::before {
+      content: "→";
+      color: var(--cor, var(--cyan));
+      font-weight: 700; flex-shrink: 0; margin-top: 1px;
+    }
+    .bold-item { font-weight: 700; color: var(--text) !important; }
+    .bold-item::before { content: "" !important; }
+    .pacote-cta {
+      display: block; text-align: center;
+      padding: 12px; border-radius: 10px;
+      font-size: 0.9rem; font-weight: 700;
+      color: white; margin-top: auto;
+      transition: opacity 0.2s, transform 0.2s;
+    }
+    .pacote-cta:hover { opacity: 0.88; transform: translateY(-1px); }
+
+    /* ── SOB MEDIDA ── */
+    .sob-medida {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 24px; flex-wrap: wrap;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 32px;
+      margin-top: 20px;
+    }
+    .sob-medida h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 6px; }
+    .sob-medida p { font-size: 0.88rem; color: var(--muted); max-width: 600px; }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 12px 24px; border-radius: 10px;
+      font-size: 0.9rem; font-weight: 700;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      color: var(--text); white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .btn:hover { border-color: rgba(212,168,67,0.4); background: rgba(212,168,67,0.06); }
+    .btn-green {
+      background: linear-gradient(135deg, #16a34a, #22c55e);
+      border: none; color: white;
+    }
+    .btn-green:hover { opacity: 0.9; transform: translateY(-1px); }
+
+    /* ── FLUXOS ── */
+    .fluxos-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+    .fluxo-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+    }
+    .fluxo-header {
+      display: flex; align-items: center; gap: 14px;
+      margin-bottom: 20px;
+    }
+    .fluxo-icon {
+      width: 44px; height: 44px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 10px;
+      font-size: 1.3rem; flex-shrink: 0;
+    }
+    .fluxo-title { font-size: 1rem; font-weight: 700; }
+    .fluxo-steps { display: flex; flex-direction: column; gap: 10px; }
+    .fluxo-step { display: flex; align-items: flex-start; gap: 12px; }
+    .step-dot {
+      width: 22px; height: 22px; min-width: 22px;
+      border: 2px solid; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.65rem; font-weight: 800;
+      flex-shrink: 0; margin-top: 1px;
+    }
+    .step-text { font-size: 0.85rem; color: var(--soft); line-height: 1.4; }
+
+    /* ── OBJEÇÕES ── */
+    .obj-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    .obj-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .obj-q {
+      font-size: 0.9rem; font-weight: 700;
+      color: var(--gold); margin-bottom: 8px;
+    }
+    .obj-q::before { content: "« "; }
+    .obj-a { font-size: 0.85rem; color: var(--muted); line-height: 1.55; }
+
+    /* ── CTA FINAL ── */
+    .cta-final {
+      text-align: center;
+      background: linear-gradient(135deg, rgba(212,168,67,0.08), rgba(6,182,212,0.08));
+      border: 1px solid rgba(212,168,67,0.2);
+      border-radius: 24px;
+      padding: 64px 40px;
+      margin: 64px 0;
+    }
+    .cta-final small {
+      display: block;
+      font-size: 0.72rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.14em;
+      color: var(--gold); margin-bottom: 16px;
+    }
+    .cta-final h2 { font-size: clamp(1.5rem, 3vw, 2.2rem); font-weight: 800; margin-bottom: 16px; }
+    .cta-final p { color: var(--muted); max-width: 540px; margin: 0 auto 32px; font-size: 1rem; line-height: 1.6; }
+    .cta-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+    /* ── FOOTER ── */
+    .site-footer {
+      text-align: center; padding: 24px;
+      color: var(--muted); font-size: 0.8rem;
+      border-top: 1px solid var(--border);
+    }
+    .site-footer strong { color: var(--gold); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 860px) {
+      .dores-grid, .pacotes-grid, .fluxos-grid, .obj-grid { grid-template-columns: 1fr; }
+      .dor-card { grid-template-columns: 1fr; }
+      .dor-left { border-right: none; border-bottom: 1px solid var(--border); }
+      .hero-stats { gap: 20px; padding: 16px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="wrap">
+      <a href="/" class="logo">NCS<span>.</span>Studio</a>
+      <div class="header-badge">⚖️ Proposta Exclusiva · Advocacia</div>
+    </div>
+  </header>
+
+  <div class="wrap">
+
+    <!-- HERO -->
+    <div class="hero">
+      <div class="eyebrow">Automação · CRM Jurídico · WhatsApp · IA</div>
+      <h1>Seu Escritório<br><span class="grad">Captando e Retendo Clientes</span><br>no Automático</h1>
+      <p class="hero-sub">Automatizamos o atendimento inicial, a cobrança de documentos e o follow-up de clientes — para você focar no que importa: as causas.</p>
+      <div class="hero-stats">
+        <div class="stat"><strong>+35%</strong><span>Conversão de consulta</span></div>
+        <div class="stat"><strong>−70%</strong><span>Perguntas repetitivas</span></div>
+        <div class="stat"><strong>3x</strong><span>Mais capacidade de atendimento</span></div>
+        <div class="stat"><strong>2–3 sem</strong><span>Para implementar</span></div>
+      </div>
+    </div>
+
+    <!-- DORES -->
+    <section>
+      <div class="section-label">Diagnóstico</div>
+      <h2 class="section-title">O que está <span class="grad">custando clientes</span> no seu escritório hoje</h2>
+      <p class="section-desc">Cada linha abaixo representa receita perdida todo mês. A NCS-Studio resolve cada uma delas.</p>
+
+      <div class="dores-grid">
+        {dores.map(d => (
+          <div class="dor-card">
+            <div class="dor-left"><p>{d.dor}</p></div>
+            <div class="dor-right"><p>{d.solucao}</p></div>
+          </div>
+        ))}
+      </div>
+
+      <div class="roi-box">
+        <div class="roi-icon">💼</div>
+        <div>
+          <h3>Quanto seu escritório perde por falta de follow-up?</h3>
+          <p>Um escritório que perde <strong>3 consultas iniciais por mês</strong> por falta de acompanhamento, com honorário médio de <strong>R$3.000</strong>, deixa <strong>R$9.000/mês</strong> na mesa. Com a automação da NCS-Studio, nenhum lead sai sem follow-up automático nas primeiras 72h.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- PACOTES -->
+    <section>
+      <div class="section-label">Investimento</div>
+      <h2 class="section-title">Escolha o pacote <span class="grad">ideal para o seu escritório</span></h2>
+      <p class="section-desc">Três níveis de automação jurídica. Todos com setup feito pela NCS-Studio, sem você precisar aprender tecnologia.</p>
+
+      <div class="pacotes-grid">
+        {pacotes.map(p => (
+          <div class={`pacote-card${p.destaque ? ' destaque' : ''}`}>
+            {p.destaque && (
+              <div style={`position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,${p.cor},#ec4899)`}></div>
+            )}
+            <div class="pacote-top">
+              <div class="pacote-badge" style={`background:${p.cor}22;color:${p.cor};border:1px solid ${p.cor}44`}>
+                {p.destaque ? '⭐ Mais escolhido' : p.nome}
+              </div>
+              <div class="pacote-name" style={`color:${p.cor}`}>{p.nome}</div>
+              <div class="pacote-price">
+                <span class="price-setup" style={`color:${p.cor}`}>{p.setup}</span>
+                <span class="price-sep">setup +</span>
+                <span class="price-mrr">{p.mrr}</span>
+              </div>
+              <p class="pacote-indicado">📍 {p.indicado}</p>
+            </div>
+            <div class="pacote-items">
+              {p.items.map((item, i) => (
+                <div class={`pacote-item${item.endsWith(':') ? ' bold-item' : ''}`} style={`--cor:${p.cor}`}>
+                  <span style={i === 0 && item.includes('Tudo') ? `color:${p.cor}` : ''}>{item}</span>
+                </div>
+              ))}
+            </div>
+            <a class="pacote-cta" href="#contato" style={`background:linear-gradient(135deg,${p.cor}cc,${p.cor}88)`}>
+              Quero este pacote →
+            </a>
+          </div>
+        ))}
+      </div>
+
+      <div class="sob-medida">
+        <div>
+          <h3>🏛️ Sob Medida — a partir de R$12.000 setup + R$1.800/mês</h3>
+          <p>Para escritórios com múltiplas unidades, sociedades jurídicas de grande porte ou sistemas proprietários de gestão. Escopo negociado conforme número de advogados, áreas, integrações e compliance OAB/LGPD.</p>
+        </div>
+        <a class="btn" href="#contato">Falar sobre projeto →</a>
+      </div>
+    </section>
+
+    <!-- FLUXOS -->
+    <section>
+      <div class="section-label">Como funciona</div>
+      <h2 class="section-title">Automações que <span class="grad">trabalham por você</span></h2>
+      <p class="section-desc">Fluxos prontos e personalizados para a linguagem e o fluxo do seu escritório.</p>
+
+      <div class="fluxos-grid">
+        {fluxos.map(f => (
+          <div class="fluxo-card">
+            <div class="fluxo-header">
+              <div class="fluxo-icon" style={`background:${f.cor}18;border:1px solid ${f.cor}33`}>{f.icone}</div>
+              <div class="fluxo-title">{f.titulo}</div>
+            </div>
+            <div class="fluxo-steps">
+              {f.steps.map((s, i) => (
+                <div class="fluxo-step">
+                  <div class="step-dot" style={`border-color:${f.cor};color:${f.cor}`}>{i + 1}</div>
+                  <p class="step-text">{s}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- OBJEÇÕES -->
+    <section>
+      <div class="section-label">Dúvidas frequentes</div>
+      <h2 class="section-title">Respostas para as <span class="grad">objeções mais comuns</span></h2>
+      <p class="section-desc">Entendemos suas dúvidas. Aqui estão as respostas diretas.</p>
+
+      <div class="obj-grid">
+        {objecoes.map(o => (
+          <div class="obj-card">
+            <div class="obj-q">{o.obj}</div>
+            <div class="obj-a">{o.resp}</div>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- CTA FINAL -->
+    <div class="cta-final" id="contato">
+      <small>Próximo passo</small>
+      <h2>Pronto para seu escritório<br/>parar de perder clientes?</h2>
+      <p>Fale com a NCS-Studio agora. Em 2–3 semanas seu escritório já terá atendimento automático, cobrança de documentos e follow-up funcionando.</p>
+      <div class="cta-actions">
+        <a class="btn btn-green" href="https://wa.me/554898233534" target="_blank">
+          💬 Falar no WhatsApp
+        </a>
+        <a class="btn" href="mailto:hello@ncs.studio">
+          ✉ Enviar e-mail
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+  <footer class="site-footer">
+    <strong>NCS-Studio</strong> · Automação, CRM e Atendimento Inteligente · © {ano}
+  </footer>
+
+</body>
+</html>

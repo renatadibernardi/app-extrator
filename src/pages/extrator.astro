@@ -1,0 +1,1196 @@
+---
+const GOOGLE_OAUTH_CLIENT_ID = import.meta.env.PUBLIC_GOOGLE_OAUTH_CLIENT_ID || '';
+---
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Extrator Inteligente</title>
+    <style>
+      :root {
+        --bg: #f2f2ef;
+        --panel: #ffffff;
+        --soft: #f8faf7;
+        --line: #d8dfd1;
+        --text: #1c2519;
+        --muted: #687161;
+        --brand: #1f5a2e;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+      }
+      .app { display: grid; grid-template-columns: 198px 1fr; min-height: 100vh; }
+      .sidebar {
+        background: #efefe9;
+        border-right: 1px solid var(--line);
+        padding: 14px 10px;
+        display: flex;
+        flex-direction: column;
+      }
+      .avatar {
+        width: 36px; height: 36px; border-radius: 12px; background: #2a7a61; color: #fff;
+        font-weight: 700; font-size: 14px; display: grid; place-items: center;
+      }
+      .brand { margin-top: 8px; font-weight: 700; font-size: 25px; color: #2d3b2f; line-height: 1; }
+      .brand small { display: block; font-size: 10px; color: var(--muted); margin-top: 6px; letter-spacing: .12em; }
+      .menu { margin-top: 18px; display: grid; gap: 4px; }
+      .menu a { text-decoration: none; color: #3d4d3f; font-size: 13px; padding: 10px; border-radius: 12px; }
+      .menu a.active { background: #dfe8da; color: #1b4a29; font-weight: 700; }
+      .destino { margin-top: 14px; }
+      .label { font-size: 10px; font-weight: 700; letter-spacing: .08em; color: #3e6543; margin-bottom: 6px; }
+      .path-hint {
+        font-size: 11px;
+        color: #5e695c;
+        margin-top: 6px;
+        line-height: 1.35;
+      }
+      .path-hint code {
+        background: #f3f6f1;
+        border: 1px solid #d8dfd1;
+        border-radius: 6px;
+        padding: 1px 5px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 11px;
+      }
+      select {
+        width: 100%; padding: 10px; border: 1px solid var(--line); border-radius: 10px; background: #fff;
+        font-size: 13px; color: #3a4939;
+      }
+      .side-note {
+        margin-top: auto; border: 1px solid var(--line); border-radius: 12px; background: #f8f8f5;
+        padding: 12px; font-size: 12px; color: var(--muted); line-height: 1.45;
+      }
+      .side-note strong { display: block; font-size: 13px; color: #1f2b1e; margin-bottom: 5px; }
+      .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(16, 24, 16, 0.5);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        z-index: 40;
+      }
+      .modal-backdrop.open { display: flex; }
+      .modal {
+        width: min(520px, 100%);
+        background: #fff;
+        border: 1px solid #cfd8cb;
+        border-radius: 20px;
+        box-shadow: 0 24px 80px rgba(13, 26, 13, 0.28);
+        padding: 18px;
+      }
+      .modal h4 {
+        margin: 0;
+        font-size: 20px;
+        color: #1f2b1f;
+      }
+      .modal p {
+        margin: 8px 0 14px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+      .modal input {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 12px 14px;
+        font-size: 14px;
+        outline: none;
+      }
+      .modal input:focus {
+        border-color: #8ebf97;
+        box-shadow: 0 0 0 3px rgba(47, 123, 67, 0.12);
+      }
+      .modal-actions {
+        margin-top: 14px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+      }
+      .modal .btn-cancel {
+        background: #fff;
+        color: #2c3a2d;
+      }
+      .modal .btn-confirm {
+        background: #1f5a2e;
+        color: #fff;
+        border-color: #1f5a2e;
+        font-weight: 700;
+      }
+
+      .main { padding: 8px; }
+      .topbar {
+        background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+        padding: 12px 18px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;
+        gap: 12px;
+      }
+      .top-left { display: flex; gap: 12px; align-items: center; }
+      .icon {
+        width: 34px; height: 34px; border-radius: 12px; background: #f3f5f2; border: 1px solid var(--line);
+        display: grid; place-items: center; color: var(--brand); font-weight: 700;
+      }
+      .title { font-size: 22px; font-weight: 700; line-height: 1.1; color: #1f2b1f; }
+      .sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
+      .chips { display: flex; gap: 8px; }
+      .chip {
+        border: 1px solid #cad6c4; background: #f0f6ec; color: #235c36; font-weight: 700;
+        border-radius: 999px; padding: 7px 12px; font-size: 12px;
+      }
+      .chip.muted {
+        background: #f7f8f5;
+        border-color: #d6ddd2;
+        color: #5f6a5e;
+        font-weight: 600;
+      }
+      .topbar-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+      .btn.auth {
+        background: #fff;
+        color: #1f5a2e;
+        border-color: #b9ccb4;
+        font-weight: 700;
+      }
+      .btn.auth.signed-in {
+        background: #1f5a2e;
+        color: #fff;
+        border-color: #1f5a2e;
+      }
+
+      .grid { display: grid; grid-template-columns: 41% 1fr; gap: 12px; }
+      .card {
+        background: var(--panel); border: 1px solid var(--line); border-radius: 22px; padding: 14px;
+      }
+      .drop {
+        border: 1px dashed #c7d4c1; background: #fbfdf9; border-radius: 22px; min-height: 330px;
+        display: grid; place-items: center; text-align: center; padding: 20px;
+      }
+      .drop h2 { margin: 12px 0 8px; font-size: 44px; line-height: 1; }
+      .drop p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.6; }
+      .formats { margin-top: 16px; color: #596359; font-weight: 700; font-size: 11px; letter-spacing: .08em; }
+      .btn {
+        border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; font-size: 14px; background: #fff; cursor: pointer;
+      }
+      .btn.primary { background: #eaf4ef; color: #1f5b2f; font-weight: 700; }
+      .stats { margin-top: 10px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+      .stat { border: 1px solid #e5eae0; border-radius: 14px; background: #fbfcfa; padding: 14px; }
+      .stat strong { font-size: 40px; line-height: 1; }
+      .stat small { display: block; color: var(--muted); margin-top: 4px; }
+      .actions { margin-top: 10px; display: flex; gap: 8px; }
+      .btn-go { background: #8da8a1; color: #fff; border: 0; font-weight: 700; }
+      .btn-go.ready { background: #1f5a2e; }
+      .btn-go:disabled {
+        background: #a8b7b1;
+        color: #eef2ef;
+        cursor: not-allowed;
+        opacity: 0.95;
+      }
+      .btn-lite { color: #a0a8a0; background: #f9faf8; }
+
+      .queue { margin-top: 10px; }
+      .queue h3, .viewer h3 { margin: 0; font-size: 31px; }
+      .queue p, .viewer p { margin: 5px 0 0; color: var(--muted); font-size: 12px; }
+      .empty {
+        margin-top: 12px; border: 1px dashed #cfd8cb; border-radius: 20px; min-height: 74px;
+        display: grid; place-items: center; color: #777f74; font-size: 13px; text-align: center; padding: 10px;
+      }
+      .viewer-header { display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px; }
+      .status {
+        border:1px solid #c7d5c1; background:#eff5ec; color:#1f5a2e; border-radius:999px; padding:6px 10px; font-size:12px; font-weight:700;
+      }
+      .viewer-empty { min-height: 52px; }
+      .queue-list {
+        margin-top: 12px;
+        display: grid;
+        gap: 8px;
+      }
+      .queue-item {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: #fafcf9;
+        padding: 10px;
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        align-items: center;
+        cursor: pointer;
+      }
+      .queue-item:hover { border-color: #b9cbb4; background: #f3f8f1; }
+      .queue-item.processing {
+        border-color: #98c0a0;
+        background: linear-gradient(180deg, #f6fbf4 0%, #eef7ea 100%);
+        box-shadow: inset 0 0 0 1px rgba(47, 123, 67, 0.08);
+      }
+      .queue-name { font-size: 13px; font-weight: 700; color: #253226; }
+      .queue-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+      .queue-progress {
+        margin-top: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: #e6ece2;
+        overflow: hidden;
+      }
+      .queue-progress > span {
+        display: block;
+        height: 100%;
+        background: linear-gradient(90deg, #2f7b43 0%, #57a864 100%);
+        width: 0%;
+        transition: width 180ms linear;
+      }
+      .queue-progress-label {
+        margin-top: 4px;
+        font-size: 10px;
+        color: #56705b;
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .queue-badge {
+        border: 1px solid #cdd8c9;
+        background: #eef4ea;
+        color: #2a5d36;
+        border-radius: 999px;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 3px 8px;
+      }
+      .viewer-content {
+        margin-top: 12px;
+        border: 1px solid #cfd8cb;
+        border-radius: 14px;
+        padding: 14px;
+        background: #fcfefb;
+        min-height: 360px;
+        max-height: 68vh;
+        overflow-y: auto;
+        overflow-x: hidden;
+        font-size: 15px;
+        line-height: 1.7;
+        width: 100%;
+        resize: vertical;
+        font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+      .extract-title {
+        margin-top: 10px;
+        font-size: 22px;
+        font-weight: 700;
+        color: #1f2b1f;
+      }
+      .viewer-actions {
+        margin-top: 10px;
+        display: flex;
+        gap: 8px;
+      }
+      .btn-copy {
+        background: #ffffff;
+        color: #1f2b1f;
+        font-weight: 700;
+      }
+      .btn-download {
+        background: #2a6f45;
+        color: #fff;
+        border-color: #2a6f45;
+        font-weight: 700;
+      }
+      .btn-save {
+        background: #1f5a2e;
+        color: #fff;
+        border-color: #1f5a2e;
+        font-weight: 700;
+      }
+      .file-sheet {
+        margin-top: 12px;
+        border: 1px solid #d5ddd0;
+        border-radius: 14px;
+        background: #fbfcfa;
+        overflow: hidden;
+      }
+      .sheet-row {
+        display: grid;
+        grid-template-columns: 140px 1fr;
+        gap: 10px;
+        padding: 8px 12px;
+        border-top: 1px solid #e7ece4;
+        font-size: 12px;
+      }
+      .sheet-row:first-child { border-top: 0; }
+      .sheet-label { color: var(--muted); }
+      .sheet-value { color: #1f2d21; font-weight: 700; word-break: break-all; }
+      .live-box {
+        margin-top: 10px;
+        border: 1px solid #d4dfd0;
+        border-radius: 14px;
+        background: #eff3ee;
+        padding: 10px 12px;
+      }
+      .live-title { font-size: 12px; color: #1f5a2e; font-weight: 700; }
+      .live-sub { margin-top: 4px; font-size: 12px; color: #2f4732; }
+      @media (max-width: 1220px) {
+        .app { grid-template-columns: 1fr; }
+        .sidebar { display: none; }
+        .grid { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <aside class="sidebar">
+        <div class="avatar">CS</div>
+        <div class="brand">Clauda Santos<small>DOCUMENT MANAGEMENT PORTAL</small></div>
+        <nav class="menu">
+          <a class="active" href="/extrator">Painel de Indexação</a>
+          <a href="/doc-md">Gerir Markdown</a>
+          <a href="#">Tradutor Automático</a>
+          <a href="/extrator">Extração OCR</a>
+        </nav>
+        <div class="destino">
+          <div class="label">PASTA DE DESTINO</div>
+          <select id="destinoSelect">
+            <option value="" selected disabled>Carregando pastas do Drive...</option>
+          </select>
+          <div class="path-hint">
+            Saída: <code>drive/md/convertido</code><br />
+            Pasta local: <code id="destinoAtual">convertido</code><br />
+            Pasta no Drive: <code id="driveDestinoAtual">Espelho Documentos/convertido</code>
+          </div>
+        </div>
+        <div class="side-note">
+          <strong>Google Drive</strong>
+          Os ficheiros desta área são guardados em <code>drive/md</code>. Quando o Google está conectado, o markdown também é enviado para <code>Espelho Documentos</code> no Drive.
+        </div>
+      </aside>
+
+      <section class="main">
+        <header class="topbar">
+          <div class="top-left">
+            <div class="icon">▣</div>
+            <div>
+              <div class="title">Extrator Inteligente</div>
+              <div class="sub">Fila multiponto para PDF, imagens, DOCX, Markdown e texto puro com destino Drive.</div>
+            </div>
+          </div>
+          <div class="chips">
+            <span class="chip">Google Drive</span>
+            <span class="chip">Saída: drive/md/convertido</span>
+            <span id="driveFolderChip" class="chip muted">Drive não sincronizado</span>
+          </div>
+          <div class="topbar-actions">
+            <span id="authChip" class="chip muted">Google não conectado</span>
+            <button id="openDriveBtn" class="btn" type="button" disabled>Abrir pasta no Drive</button>
+            <button id="googleLoginBtn" class="btn auth" type="button">Conectar Google</button>
+          </div>
+        </header>
+
+        <div class="grid">
+          <div>
+            <section class="card">
+              <div class="drop">
+                <div>
+                  <div class="icon" style="margin: 0 auto;">⎘</div>
+                  <h2>Arrasta os ficheiros para cá</h2>
+                  <p>O painel tenta extração direta em PDF, OCR em imagem e conversão textual para DOCX, TXT e MD.</p>
+                  <div class="formats">PDF &nbsp;&nbsp; DOCX &nbsp;&nbsp; TXT / MD &nbsp;&nbsp; PNG / JPG</div>
+                  <input id="fileInput" type="file" multiple accept=".pdf,.doc,.docx,.txt,.md,.png,.jpg,.jpeg" hidden />
+                  <button id="selectBtn" class="btn primary" style="margin-top:14px;" type="button">Selecionar ficheiros</button>
+                </div>
+              </div>
+
+              <div class="stats">
+                <div class="stat"><strong id="countQueue">0</strong><small>na fila</small></div>
+                <div class="stat"><strong id="countDone">0</strong><small>extraídos</small></div>
+                <div class="stat"><strong id="countError">0</strong><small>com erro</small></div>
+              </div>
+
+              <div class="actions">
+                <button id="startBtn" class="btn btn-go" type="button" disabled>Iniciar extração lote</button>
+                <button id="clearBtn" class="btn btn-lite" type="button">Esvaziar</button>
+                <button id="newFolderBtn" class="btn btn-lite" type="button">Nova pasta</button>
+              </div>
+            </section>
+
+            <section class="card queue">
+              <h3>Fila de processamento</h3>
+              <p>Cada ficheiro guarda estado, progresso e o documento final enviado para o Drive.</p>
+              <div id="queueEmpty" class="empty">A fila está vazia. Carrega ficheiros para começar a clonar os fluxos do portal.</div>
+              <div id="queueList" class="queue-list" hidden></div>
+            </section>
+          </div>
+
+          <section class="card viewer">
+            <div class="viewer-header">
+              <div>
+                <h3>Visualizador operacional</h3>
+                <p>Prévia da extração com ações rápidas para copiar, baixar o markdown e validar o resultado antes ou depois do envio.</p>
+              </div>
+              <span id="viewerStatus" class="status">Nenhum ficheiro selecionado</span>
+            </div>
+            <div id="viewerEmpty" class="empty viewer-empty">Nenhum ficheiro na fila.</div>
+            <div id="fileSheet" class="file-sheet" hidden>
+              <div class="sheet-row"><div class="sheet-label">Nome original</div><div id="sheetName" class="sheet-value"></div></div>
+              <div class="sheet-row"><div class="sheet-label">Tamanho</div><div id="sheetSize" class="sheet-value"></div></div>
+              <div class="sheet-row"><div class="sheet-label">Estado</div><div id="sheetState" class="sheet-value"></div></div>
+              <div class="sheet-row"><div class="sheet-label">Pasta de destino</div><div id="sheetFolder" class="sheet-value"></div></div>
+            </div>
+            <div id="liveBox" class="live-box" hidden>
+              <div id="liveTitle" class="live-title"></div>
+              <div id="liveSub" class="live-sub"></div>
+            </div>
+            <div id="extractTitle" class="extract-title" hidden>Texto extraído</div>
+            <textarea id="viewerContent" class="viewer-content" hidden></textarea>
+            <div id="viewerActions" class="viewer-actions" hidden>
+              <button id="copyTextBtn" class="btn btn-copy" type="button">Copiar texto</button>
+              <button id="downloadMdBtn" class="btn btn-download" type="button">Baixar markdown</button>
+              <button id="saveTextBtn" class="btn btn-save" type="button">Salvar alterações</button>
+            </div>
+          </section>
+        </div>
+      </section>
+    </div>
+    <div id="folderModalBackdrop" class="modal-backdrop" aria-hidden="true">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="folderModalTitle">
+        <h4 id="folderModalTitle">Criar nova pasta</h4>
+        <p>Escreve o nome da pasta e confirma para ela aparecer na lista de destino.</p>
+        <input id="folderNameInput" type="text" placeholder="ex: campanha-junho" autocomplete="off" />
+        <div class="modal-actions">
+          <button id="folderCancelBtn" class="btn btn-cancel" type="button">Cancelar</button>
+          <button id="folderConfirmBtn" class="btn btn-confirm" type="button">OK</button>
+        </div>
+      </div>
+    </div>
+    <script define:vars={{ GOOGLE_OAUTH_CLIENT_ID }}>
+      const fileInput = document.getElementById('fileInput');
+      const selectBtn = document.getElementById('selectBtn');
+      const startBtn = document.getElementById('startBtn');
+      const clearBtn = document.getElementById('clearBtn');
+      const queueEmpty = document.getElementById('queueEmpty');
+      const queueList = document.getElementById('queueList');
+      const countQueue = document.getElementById('countQueue');
+      const countDone = document.getElementById('countDone');
+      const countError = document.getElementById('countError');
+      const viewerStatus = document.getElementById('viewerStatus');
+      const viewerEmpty = document.getElementById('viewerEmpty');
+      const viewerContent = document.getElementById('viewerContent');
+      const extractTitle = document.getElementById('extractTitle');
+      const viewerActions = document.getElementById('viewerActions');
+      const copyTextBtn = document.getElementById('copyTextBtn');
+      const downloadMdBtn = document.getElementById('downloadMdBtn');
+      const saveTextBtn = document.getElementById('saveTextBtn');
+      const newFolderBtn = document.getElementById('newFolderBtn');
+      const folderModalBackdrop = document.getElementById('folderModalBackdrop');
+      const folderNameInput = document.getElementById('folderNameInput');
+      const folderCancelBtn = document.getElementById('folderCancelBtn');
+      const folderConfirmBtn = document.getElementById('folderConfirmBtn');
+      const destinoSelect = document.getElementById('destinoSelect');
+      const destinoAtual = document.getElementById('destinoAtual');
+      const driveDestinoAtual = document.getElementById('driveDestinoAtual');
+      const fileSheet = document.getElementById('fileSheet');
+      const sheetName = document.getElementById('sheetName');
+      const sheetSize = document.getElementById('sheetSize');
+      const sheetState = document.getElementById('sheetState');
+      const sheetFolder = document.getElementById('sheetFolder');
+      const liveBox = document.getElementById('liveBox');
+      const liveTitle = document.getElementById('liveTitle');
+      const liveSub = document.getElementById('liveSub');
+      const driveFolderChip = document.getElementById('driveFolderChip');
+      const openDriveBtn = document.getElementById('openDriveBtn');
+      const authChipEl = document.getElementById('authChip');
+      const googleLoginBtn = document.getElementById('googleLoginBtn');
+
+      const DRIVE_ROOT_ID = '1ZVcO-yNceUveu8ORCZG9iOtkKHjSunmI';
+      const DRIVE_ROOT_NAME = 'Espelho Documentos';
+      const DRIVE_FOLDER_BASE_URL = 'https://drive.google.com/drive/folders/';
+      const AUTH_STATUS_URL = '/api/auth/google/status';
+      const AUTH_LOGOUT_URL = '/api/auth/google/logout';
+      const AUTH_START_URL = '/auth/google/start?returnTo=/extrator';
+
+      let queue = [];
+      let done = 0;
+      let errors = 0;
+      let selectedIndex = -1;
+      let currentFolder = destinoSelect?.value || 'convertido';
+      let driveFolderId = '';
+      let driveFolderName = '';
+      let driveFolderLoading = false;
+      let driveFolderPromise = null;
+      let activeProgressTimer = null;
+      let googleAccessToken = '';
+      let googleUserLabel = '';
+      let googleAuthLoading = true;
+
+      function setStatus(message) {
+        if (viewerStatus) {
+          viewerStatus.textContent = message;
+        }
+      }
+
+      function setAuthState(nextAccessToken, nextUserLabel = '') {
+        googleAccessToken = nextAccessToken ? 'connected' : '';
+        googleUserLabel = nextUserLabel || '';
+
+        if (!googleAccessToken) {
+          driveFolderId = '';
+          driveFolderName = '';
+          driveFolderPromise = null;
+        }
+
+        renderAuthState();
+      }
+
+      function renderDestinationFolders(folders, selectedFolder = currentFolder) {
+        if (!destinoSelect) return;
+
+        const normalizedFolders = Array.isArray(folders)
+          ? folders
+              .map((folder) => String(folder || '').trim())
+              .filter(Boolean)
+              .sort((a, b) => a.localeCompare(b, 'pt-BR'))
+          : [];
+
+        destinoSelect.innerHTML = '';
+
+        if (!normalizedFolders.length) {
+          const option = document.createElement('option');
+          option.value = '';
+          option.textContent = googleAccessToken
+            ? 'Nenhuma pasta no Drive'
+            : 'Conecte o Google para carregar pastas';
+          option.selected = true;
+          option.disabled = true;
+          destinoSelect.appendChild(option);
+          updateDriveDestinationLabel();
+          return;
+        }
+
+        for (const folder of normalizedFolders) {
+          const option = document.createElement('option');
+          option.value = folder;
+          option.textContent = folder;
+          if (folder === selectedFolder) {
+            option.selected = true;
+          }
+          destinoSelect.appendChild(option);
+        }
+
+        if (!normalizedFolders.includes(selectedFolder)) {
+          destinoSelect.value = normalizedFolders[0];
+        }
+
+        currentFolder = destinoSelect.value || 'convertido';
+        if (destinoAtual) {
+          destinoAtual.textContent = currentFolder;
+        }
+        updateDriveDestinationLabel();
+      }
+
+      function renderDriveState() {
+        if (driveFolderChip) {
+          driveFolderChip.textContent = googleAuthLoading
+            ? 'A verificar Drive...'
+            : googleAccessToken
+              ? (driveFolderName ? `Drive: ${driveFolderName}` : 'Drive conectado')
+              : 'Drive não sincronizado';
+          driveFolderChip.className = googleAccessToken ? 'chip' : 'chip muted';
+        }
+
+        if (openDriveBtn) {
+          openDriveBtn.disabled = googleAuthLoading || !googleAccessToken || driveFolderLoading || !driveFolderId;
+          openDriveBtn.textContent = driveFolderLoading ? 'A sincronizar...' : 'Abrir pasta no Drive';
+        }
+      }
+
+      function renderAuthState() {
+        const signedIn = Boolean(googleAccessToken);
+
+        if (authChipEl) {
+          authChipEl.textContent = googleAuthLoading
+            ? 'A verificar login...'
+            : signedIn
+            ? `Conectado${googleUserLabel ? ` · ${googleUserLabel}` : ''}`
+            : 'Google não conectado';
+          authChipEl.className = signedIn ? 'chip' : 'chip muted';
+        }
+
+        if (googleLoginBtn) {
+          googleLoginBtn.textContent = googleAuthLoading
+            ? 'A verificar...'
+            : signedIn
+              ? 'Desconectar'
+              : 'Conectar Google';
+          googleLoginBtn.className = signedIn ? 'btn auth signed-in' : 'btn auth';
+          googleLoginBtn.disabled = googleAuthLoading;
+        }
+
+        renderDriveState();
+      }
+
+      async function refreshAuthState() {
+        googleAuthLoading = true;
+        renderAuthState();
+
+        try {
+          const response = await fetch(AUTH_STATUS_URL, {
+            credentials: 'same-origin'
+          });
+          const data = await response.json().catch(() => ({ authenticated: false }));
+          setAuthState(data?.authenticated ? 'connected' : '', data?.userLabel || '');
+          if (data?.authenticated) {
+            await resolveDriveFolder(currentFolder, true);
+            await refreshDestinationFoldersFromDrive();
+          } else {
+            renderDestinationFolders([], currentFolder);
+          }
+        } catch {
+          setAuthState('', '');
+          renderDestinationFolders([], currentFolder);
+        } finally {
+          googleAuthLoading = false;
+          renderAuthState();
+        }
+      }
+
+      async function refreshDestinationFoldersFromDrive() {
+        if (!googleAccessToken) {
+          renderDestinationFolders([], currentFolder);
+          return;
+        }
+
+        const rootData = await fetchDriveFolderChildren(DRIVE_ROOT_ID);
+        const folders = Array.isArray(rootData.folders) ? rootData.folders.map((item) => item.name) : [];
+        const preferred = folders.includes(currentFolder) ? currentFolder : (folders.includes('convertido') ? 'convertido' : folders[0] || 'convertido');
+        renderDestinationFolders(folders, preferred);
+      }
+
+      async function fetchDriveFolderChildren(folderId) {
+        const response = await fetch(`/api/drive/list?folderId=${encodeURIComponent(folderId)}`, {
+          credentials: 'same-origin'
+        });
+        const data = await response.json().catch(() => ({ ok: false }));
+        if (!response.ok || !data.ok) {
+          throw new Error(data.error || 'Falha ao listar pastas do Google Drive.');
+        }
+        return data;
+      }
+
+      async function createDriveFolder(parentId, name) {
+        const response = await fetch('/api/drive/create-folder', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'same-origin',
+          body: JSON.stringify({
+            parentId,
+            name
+          })
+        });
+        const data = await response.json().catch(() => ({ ok: false }));
+        if (!response.ok || !data.ok) {
+          throw new Error(data.error || 'Falha ao criar pasta no Google Drive.');
+        }
+        return data.folder;
+      }
+
+      async function resolveDriveFolder(folderName = currentFolder, force = false) {
+        if (!googleAccessToken) {
+          return null;
+        }
+
+        const normalizedName = String(folderName || '').trim() || 'convertido';
+        if (!force && driveFolderId && driveFolderName === normalizedName) {
+          return driveFolderId;
+        }
+
+        if (driveFolderPromise) {
+          return driveFolderPromise;
+        }
+
+        driveFolderLoading = true;
+        renderDriveState();
+
+        driveFolderPromise = (async () => {
+          const rootData = await fetchDriveFolderChildren(DRIVE_ROOT_ID);
+          const folders = Array.isArray(rootData.folders) ? rootData.folders : [];
+          let folder = folders.find((item) => item.name === normalizedName) || null;
+
+          if (!folder) {
+            folder = await createDriveFolder(DRIVE_ROOT_ID, normalizedName);
+          }
+
+          driveFolderId = folder?.id || '';
+          driveFolderName = folder?.name || normalizedName;
+          renderDriveState();
+          return driveFolderId;
+        })();
+
+        try {
+          return await driveFolderPromise;
+        } finally {
+          driveFolderPromise = null;
+          driveFolderLoading = false;
+          renderDriveState();
+        }
+      }
+
+      function openCurrentDriveFolder() {
+        const targetId = driveFolderId || DRIVE_ROOT_ID;
+        window.open(`${DRIVE_FOLDER_BASE_URL}${targetId}`, '_blank', 'noopener');
+      }
+
+      function updateDriveDestinationLabel() {
+        if (driveDestinoAtual) {
+          driveDestinoAtual.textContent = `Espelho Documentos/${currentFolder || 'convertido'}`;
+        }
+      }
+
+      async function uploadMarkdownToDrive(item) {
+        if (!googleAccessToken) return null;
+
+        const content = String(item.output || '').trim();
+        if (!content) return null;
+
+        const folderId = await resolveDriveFolder(currentFolder);
+        if (!folderId) {
+          throw new Error('Não foi possível resolver a pasta do Google Drive.');
+        }
+
+        const response = await fetch('/api/drive/upload', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'same-origin',
+          body: JSON.stringify({
+            folderId,
+            name: item.mdName || `${item.name.replace(/\.[^.]+$/, '')}.md`,
+            content,
+            mimeType: 'text/markdown; charset=UTF-8'
+          })
+        });
+
+        const data = await response.json().catch(() => ({ ok: false }));
+        if (!response.ok || !data.ok) {
+          throw new Error(data.error || 'Falha ao enviar o markdown para o Google Drive.');
+        }
+
+        return data.file || null;
+      }
+
+      function stopProgressTimer() {
+        if (activeProgressTimer) {
+          clearInterval(activeProgressTimer);
+          activeProgressTimer = null;
+        }
+      }
+
+      function beginProgress(item) {
+        stopProgressTimer();
+        activeProgressTimer = setInterval(() => {
+          if (item.status !== 'processing') {
+            stopProgressTimer();
+            return;
+          }
+
+          const current = Number(item.progress) || 0;
+          const increment = current < 40 ? 6 : current < 75 ? 3 : 1;
+          item.progress = Math.min(92, current + increment);
+          renderQueue();
+        }, 180);
+      }
+
+      function finishProgress(item, ok) {
+        stopProgressTimer();
+        item.progress = 100;
+        if (ok) {
+          item.status = 'done';
+        }
+        renderQueue();
+      }
+
+      function openFolderModal() {
+        if (!folderModalBackdrop || !folderNameInput) return;
+        const suggested = `nova-pasta-${String((destinoSelect?.options.length || 0) + 1).padStart(2, '0')}`;
+        folderNameInput.value = suggested;
+        folderModalBackdrop.classList.add('open');
+        folderModalBackdrop.setAttribute('aria-hidden', 'false');
+        window.setTimeout(() => folderNameInput.focus(), 0);
+      }
+
+      function closeFolderModal() {
+        if (!folderModalBackdrop || !folderNameInput) return;
+        folderModalBackdrop.classList.remove('open');
+        folderModalBackdrop.setAttribute('aria-hidden', 'true');
+        folderNameInput.value = '';
+      }
+
+      function renderQueue() {
+        countQueue.textContent = String(queue.length);
+        countDone.textContent = String(done);
+        countError.textContent = String(errors);
+        startBtn.disabled = queue.length === 0;
+        startBtn.classList.toggle('ready', queue.length > 0);
+
+        if (!queue.length) {
+          queueEmpty.hidden = false;
+          queueList.hidden = true;
+          queueList.innerHTML = '';
+          return;
+        }
+
+        queueEmpty.hidden = true;
+        queueList.hidden = false;
+        queueList.innerHTML = queue
+          .map((item, i) => `
+            <article class="queue-item ${item.status === 'processing' ? 'processing' : ''}" data-index="${i}">
+              <div>
+                <div class="queue-name">${item.name}</div>
+                <div class="queue-meta">${item.type || 'ficheiro'} • ${item.status} • ${item.progress || 0}%</div>
+                <div class="queue-progress" aria-label="Progresso do ficheiro ${item.name}">
+                  <span style="width:${item.progress || 0}%"></span>
+                </div>
+                <div class="queue-progress-label">
+                  <span>${item.status === 'processing' ? 'A extrair agora' : 'Pendente'}</span>
+                  <span>${item.progress || 0}%</span>
+                </div>
+              </div>
+              <span class="queue-badge">#${i + 1}</span>
+            </article>
+          `)
+          .join('');
+      }
+
+      function setViewer(item) {
+        if (!item) {
+          selectedIndex = -1;
+          viewerStatus.textContent = 'Nenhum ficheiro selecionado';
+          viewerEmpty.hidden = false;
+          viewerContent.hidden = true;
+          viewerContent.value = '';
+          extractTitle.hidden = true;
+          viewerActions.hidden = true;
+          fileSheet.hidden = true;
+          liveBox.hidden = true;
+          return;
+        }
+        viewerStatus.textContent = `${item.status}`;
+        fileSheet.hidden = false;
+        sheetName.textContent = item.name;
+        sheetSize.textContent = item.sizeLabel || '-';
+        sheetState.textContent = item.status;
+        if (sheetFolder) sheetFolder.textContent = currentFolder || 'convertido';
+
+        if (item.status === 'processing' || item.status.includes('a processar')) {
+          liveBox.hidden = false;
+          liveTitle.textContent = 'A processar agora';
+          liveSub.textContent = `A extrair ${item.name}`;
+        } else if (item.status === 'done' || item.status.startsWith('done ')) {
+          liveBox.hidden = false;
+          liveTitle.textContent = item.status === 'done' ? 'Extração concluída' : 'Extração concluída com aviso';
+          liveSub.textContent = item.cloudError || 'Markdown pronto para validação';
+        } else {
+          liveBox.hidden = false;
+          liveTitle.textContent = 'Na fila de execução';
+          liveSub.textContent = 'Aguardando processamento';
+        }
+
+        if (!item.output) {
+          viewerEmpty.hidden = true;
+          viewerContent.hidden = true;
+          extractTitle.hidden = true;
+          viewerActions.hidden = true;
+          return;
+        }
+        viewerEmpty.hidden = true;
+        viewerContent.hidden = false;
+        extractTitle.hidden = false;
+        viewerActions.hidden = false;
+        viewerContent.value = item.output;
+      }
+
+      selectBtn?.addEventListener('click', () => fileInput?.click());
+
+      googleLoginBtn?.addEventListener('click', async () => {
+        if (googleAuthLoading) return;
+
+        if (googleAccessToken) {
+          try {
+            await fetch(AUTH_LOGOUT_URL, {
+              method: 'POST',
+              credentials: 'same-origin'
+            });
+          } catch {}
+
+          setAuthState('', '');
+          setStatus('Google desconectado.', 'success');
+          return;
+        }
+
+        window.location.href = AUTH_START_URL;
+      });
+
+      fileInput?.addEventListener('change', () => {
+        const files = Array.from(fileInput.files || []);
+        queue = files.map((f) => ({
+          file: f,
+          name: f.name,
+          type: (f.name.split('.').pop() || '').toUpperCase(),
+          status: 'na fila',
+          progress: 0,
+          output: '',
+          sizeLabel: `${(f.size / (1024 * 1024)).toFixed(1)} MB`
+        }));
+        done = 0;
+        errors = 0;
+        renderQueue();
+        if (queue.length > 0) {
+          selectedIndex = 0;
+          setViewer(queue[0]);
+        } else {
+          setViewer(null);
+        }
+      });
+
+      clearBtn?.addEventListener('click', () => {
+        queue = [];
+        done = 0;
+        errors = 0;
+        if (fileInput) fileInput.value = '';
+        renderQueue();
+        setViewer(null);
+      });
+
+      startBtn?.addEventListener('click', async () => {
+        if (!queue.length) return;
+        if (selectedIndex < 0 && queue.length > 0) {
+          selectedIndex = 0;
+        }
+        startBtn.textContent = 'A processar...';
+        startBtn.disabled = true;
+        for (const item of queue) {
+          if (!(item.file instanceof File)) {
+            item.status = 'erro';
+            item.progress = 100;
+            item.output = 'O ficheiro original não está disponível para processamento.';
+            errors += 1;
+            setViewer(item);
+            renderQueue();
+            continue;
+          }
+
+          item.status = 'processing';
+          item.progress = 15;
+          item.output = '';
+          setViewer(item);
+          renderQueue();
+          beginProgress(item);
+
+          try {
+            const formData = new FormData();
+            formData.append('file', item.file);
+            formData.append('folder', currentFolder);
+
+            const response = await fetch('/api/extrator-process', {
+              method: 'POST',
+              body: formData,
+            });
+            const data = await response.json().catch(() => ({ ok: false }));
+
+            if (!response.ok || !data.ok) {
+              item.status = 'erro';
+              item.output = data.error || 'Falha ao extrair o ficheiro.';
+              errors += 1;
+              finishProgress(item, false);
+            } else {
+              item.output = data.markdown || '';
+              item.mdName = data.mdName || `${item.name.replace(/\.[^.]+$/, '')}.md`;
+              item.savedPath = data.outputFile || '';
+              done += 1;
+              finishProgress(item, true);
+
+              if (googleAccessToken) {
+                try {
+                  liveTitle.textContent = 'Enviando para o Drive';
+                  liveSub.textContent = `A sincronizar ${item.mdName} na conta Google`;
+                  await uploadMarkdownToDrive(item);
+                } catch (error) {
+                  item.cloudError = error instanceof Error ? error.message : 'Falha ao enviar para o Google Drive.';
+                  errors += 1;
+                  item.status = 'done com aviso';
+                }
+              }
+            }
+          } catch (error) {
+            item.status = 'erro';
+            item.output = 'Erro de comunicação com o extrator local.';
+            errors += 1;
+            finishProgress(item, false);
+          }
+
+          setViewer(item);
+          renderQueue();
+        }
+        stopProgressTimer();
+        startBtn.textContent = 'Iniciar extração lote';
+        startBtn.disabled = queue.length === 0;
+        startBtn.classList.toggle('ready', queue.length > 0);
+      });
+
+      queueList?.addEventListener('click', (event) => {
+        const target = event.target.closest('[data-index]');
+        if (!target) return;
+        const idx = Number(target.getAttribute('data-index'));
+        if (Number.isNaN(idx)) return;
+        selectedIndex = idx;
+        setViewer(queue[idx]);
+      });
+
+      copyTextBtn?.addEventListener('click', async () => {
+        const text = viewerContent?.value || '';
+        if (!text.trim()) return;
+        await navigator.clipboard.writeText(text);
+      });
+
+      downloadMdBtn?.addEventListener('click', () => {
+        const active = selectedIndex >= 0 ? queue[selectedIndex] : queue.find((q) => q.output);
+        if (!active?.output) return;
+        const blob = new Blob([viewerContent.value || active.output], { type: 'text/markdown;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = active.mdName || 'resultado.md';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      });
+
+      destinoSelect?.addEventListener('change', () => {
+        currentFolder = destinoSelect.value || 'convertido';
+        if (destinoAtual) {
+          destinoAtual.textContent = currentFolder || 'sem pasta';
+        }
+        updateDriveDestinationLabel();
+        if (googleAccessToken) {
+          void resolveDriveFolder(currentFolder, true);
+        }
+      });
+
+      newFolderBtn?.addEventListener('click', async () => {
+        openFolderModal();
+      });
+
+      folderCancelBtn?.addEventListener('click', () => {
+        closeFolderModal();
+      });
+
+      folderModalBackdrop?.addEventListener('click', (event) => {
+        if (event.target === folderModalBackdrop) {
+          closeFolderModal();
+        }
+      });
+
+      folderNameInput?.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+          closeFolderModal();
+        }
+        if (event.key === 'Enter') {
+          folderConfirmBtn?.click();
+        }
+      });
+
+      folderConfirmBtn?.addEventListener('click', async () => {
+        const folderName = folderNameInput?.value.trim() || '';
+        if (!folderName) {
+          alert('Escreve um nome para a pasta.');
+          folderNameInput?.focus();
+          return;
+        }
+
+        try {
+          const response = await fetch('/api/drive/create-folder', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify({ parentId: DRIVE_ROOT_ID, name: folderName }),
+          });
+          const data = await response.json().catch(() => ({ ok: false }));
+          if (!response.ok || !data.ok) {
+            alert(data.error || 'Não foi possível criar a pasta no Google Drive.');
+            return;
+          }
+
+          const createdName = data.folder?.name || folderName;
+          currentFolder = createdName;
+          await refreshDestinationFoldersFromDrive();
+          if (destinoSelect) destinoSelect.value = createdName;
+          if (destinoAtual) destinoAtual.textContent = currentFolder;
+          updateDriveDestinationLabel();
+          if (googleAccessToken) void resolveDriveFolder(currentFolder, true);
+          closeFolderModal();
+        } catch (error) {
+          alert('Erro ao criar a pasta.');
+        }
+      });
+
+      saveTextBtn?.addEventListener('click', async () => {
+        const active = selectedIndex >= 0 ? queue[selectedIndex] : null;
+        if (!active) {
+          alert('Selecione um item da fila para salvar.');
+          return;
+        }
+        const content = viewerContent.value || '';
+        const mdName = active.mdName || `${active.name.replace(/\.[^.]+$/, '')}.md`;
+        if (!content.trim()) {
+          alert('Não há conteúdo para salvar.');
+          return;
+        }
+        try {
+          const response = await fetch('/api/extrator-save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mdName, content, folder: currentFolder }),
+          });
+          const data = await response.json();
+          if (!response.ok || !data.ok) {
+            alert(data.error || 'Falha ao salvar alterações.');
+            return;
+          }
+          active.output = content;
+          active.mdName = mdName;
+          active.savedPath = data.path || '';
+          if (googleAccessToken) {
+            try {
+              await uploadMarkdownToDrive(active);
+              alert(`Alterações salvas em drive/md/${currentFolder}/${mdName} e enviadas para o Google Drive.`);
+            } catch (error) {
+              alert(`Alterações salvas em drive/md/${currentFolder}/${mdName}, mas o envio ao Google Drive falhou.`);
+            }
+          } else {
+            alert(`Alterações salvas em drive/md/${currentFolder}/${mdName}`);
+          }
+        } catch (error) {
+          alert('Erro ao salvar localmente.');
+        }
+      });
+
+      openDriveBtn?.addEventListener('click', () => {
+        openCurrentDriveFolder();
+      });
+
+      renderDestinationFolders([], currentFolder);
+      updateDriveDestinationLabel();
+      refreshAuthState();
+      renderQueue();
+      setViewer(null);
+    </script>
+  </body>
+</html>

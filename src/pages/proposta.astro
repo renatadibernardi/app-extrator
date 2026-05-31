@@ -1,0 +1,881 @@
+---
+const ano = new Date().getFullYear();
+
+const dores = [
+  { dor: "WhatsApp caótico com múltiplos atendentes sem histórico", solucao: "CRM + atendimento centralizado com IA e transferência humana" },
+  { dor: "Alto índice de no-show e cancelamentos sem aviso", solucao: "Confirmação automática por WhatsApp 48h e 2h antes" },
+  { dor: "Agenda manual, marcação por telefone ou DM", solucao: "Agendamento online integrado ao WhatsApp e site" },
+  { dor: "Clientes sumindo após o primeiro atendimento", solucao: "Fluxo de reativação automática (30, 60, 90 dias)" },
+  { dor: "Sem follow-up pós-atendimento", solucao: "Régua de mensagens automáticas (avaliação, retorno, indicação)" },
+  { dor: "Captação dependente só de indicação", solucao: "Automação de indicação + Google Meu Negócio + tráfego pago" },
+  { dor: "Equipe sobrecarregada com tarefas repetitivas", solucao: "IA resolve triagem, FAQ, confirmações e agendamentos" },
+];
+
+const pacotes = [
+  {
+    nome: "Start",
+    setup: "R$ 1.800",
+    mrr: "R$ 247/mês",
+    cor: "#06b6d4",
+    indicado: "Autônomos e pequenas empresas com até 3 pessoas na operação",
+    items: [
+      "WhatsApp centralizado com triagem automática (FAQ + horários + serviços)",
+      "Confirmação automática de agendamento (48h e 2h antes)",
+      "Reagendamento automático via WhatsApp em cancelamentos",
+      "CRM básico: cadastro, histórico e status do atendimento",
+      "Integração com Google Agenda ou sistema de gestão atual",
+      "Relatório mensal de confirmações e no-shows evitados",
+    ],
+  },
+  {
+    nome: "Growth",
+    setup: "R$ 4.500",
+    mrr: "R$ 597/mês",
+    cor: "#a855f7",
+    destaque: true,
+    indicado: "Empresas com equipe de 3–10 pessoas prontas para escalar",
+    items: [
+      "Tudo do Start, mais:",
+      "Fluxo de reativação de clientes (30, 60 e 90 dias sem retorno)",
+      "Campanha automática de aniversário e datas sazonais",
+      "CRM completo: funil lead → agendamento → atendimento → retorno",
+      "Integração com CRM ou sistema de gestão da empresa",
+      "Gestão de avaliações Google Meu Negócio automática",
+      "Painel de métricas: conversão, no-show, novos clientes",
+      "Suporte WhatsApp com SLA 24h",
+    ],
+  },
+  {
+    nome: "Scale",
+    setup: "R$ 9.000",
+    mrr: "R$ 1.497/mês",
+    cor: "#f97316",
+    indicado: "Empresas de médio porte, franquias e operações com múltiplas unidades",
+    items: [
+      "Tudo do Growth, mais:",
+      "Agente de IA treinado com a base de conhecimento do seu negócio",
+      "Triagem inteligente por serviço, urgência e disponibilidade",
+      "Integração financeira e relatório por colaborador/unidade",
+      "Pós-atendimento: pesquisa de satisfação (NPS) e lembrete de retorno",
+      "Fluxo de captação via tráfego pago integrado ao CRM",
+      "Gestão de multi-unidades",
+      "Reunião mensal de resultado e plano de evolução",
+    ],
+  },
+];
+
+const fluxos = [
+  {
+    titulo: "Confirmação de Agendamento",
+    icone: "📅",
+    cor: "#06b6d4",
+    steps: [
+      "Agendamento registrado no sistema",
+      "WhatsApp T-48h: confirmação com nome e serviço",
+      "SIM → Lembrete T-2h",
+      "NÃO → Remarcação automática + alerta",
+      "Sem resposta → Follow-up + alerta para a equipe",
+    ],
+  },
+  {
+    titulo: "Reativação de Clientes",
+    icone: "🔄",
+    cor: "#a855f7",
+    steps: [
+      "Filtro: sem atendimento há 30/60/90 dias",
+      "WhatsApp personalizado com nome do cliente",
+      "SIM → Agendamento automático",
+      "NÃO → Ciclo reinicia em 30 dias",
+    ],
+  },
+  {
+    titulo: "Captação via Tráfego",
+    icone: "🎯",
+    cor: "#f97316",
+    steps: [
+      "Lead entra via Meta Ads ou Google",
+      "WhatsApp automático em até 5 min",
+      "Triagem: serviço + disponibilidade + urgência",
+      "Oferta de horário ou proposta imediata",
+      "CRM: status 'Agendado' + nutrição pré-atendimento",
+    ],
+  },
+  {
+    titulo: "Pós-Atendimento",
+    icone: "⭐",
+    cor: "#22c55e",
+    steps: [
+      "Atendimento realizado",
+      "T+2h: mensagem de acompanhamento",
+      "T+24h: pesquisa de satisfação (1–5 estrelas)",
+      "Nota 4–5 → Solicita avaliação Google",
+      "Nota 1–3 → Alerta gestão + recuperação",
+      "T+30 dias → Lembrete de retorno",
+    ],
+  },
+];
+
+const objecoes = [
+  { obj: "Já tenho um sistema de gestão", resp: "Ótimo — integramos ao seu sistema atual. O que ele não entrega é automação de WhatsApp, IA de triagem e fluxo de reativação de clientes inativos." },
+  { obj: "Minha equipe já faz isso", resp: "Com automação, sua equipe para de responder as mesmas perguntas todo dia e foca em atendimento de qualidade. Seu negócio funciona fora do horário comercial." },
+  { obj: "Tenho medo de perder o toque humano", resp: "A IA resolve triagem e FAQ. Tudo que exige atenção vai direto para a equipe com o contexto completo do cliente. Testamos até você aprovar." },
+  { obj: "Não sei se vale o investimento", resp: "Um negócio com 5 no-shows por semana e ticket médio de R$300 perde R$6.000/mês. Se a automação evitar apenas 1 no-show por mês, ela já se paga." },
+  { obj: "Não tenho tempo para implantar", resp: "A implementação é feita pela NCS-Studio. Você valida. Em 2–3 semanas o sistema está rodando sem interrupção da sua operação." },
+  { obj: "Tenho medo de problema com a LGPD", resp: "Usamos API oficial da Meta, sem armazenamento de dados sensíveis no chatbot. Os dados ficam no seu sistema de gestão, sob seu controle." },
+];
+---
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NCS-Studio — Proposta Personalizada</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    :root {
+      --bg: #030612;
+      --surface: rgba(8,14,36,0.9);
+      --border: rgba(255,255,255,0.08);
+      --border-blue: rgba(59,130,246,0.35);
+      --text: #f0f6ff;
+      --muted: #8fa3c4;
+      --soft: #c8d9f5;
+      --blue: #3b82f6;
+      --cyan: #06b6d4;
+      --purple: #a855f7;
+      --green: #22c55e;
+      --orange: #f97316;
+      --radius: 16px;
+      --max: 1100px;
+    }
+
+    body {
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 10% 10%, rgba(168,85,247,0.22), transparent 30%),
+        radial-gradient(circle at 85% 15%, rgba(59,130,246,0.2), transparent 28%),
+        radial-gradient(circle at 50% 90%, rgba(6,182,212,0.1), transparent 30%),
+        linear-gradient(135deg, #020510 0%, #060e22 50%, #020710 100%);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed; inset: 0;
+      pointer-events: none; opacity: 0.25;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+      background-size: 40px 40px;
+      mask-image: radial-gradient(circle at center, black 0 50%, transparent 85%);
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    .wrap {
+      width: min(var(--max), calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    /* ── HEADER ── */
+    .site-header {
+      padding: 20px 0;
+      border-bottom: 1px solid var(--border-blue);
+    }
+
+    .site-header .wrap {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .logo {
+      font-size: 1.4rem;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+    }
+
+    .logo span { color: var(--green); }
+
+    .header-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border: 1px solid rgba(6,182,212,0.4);
+      border-radius: 999px;
+      background: rgba(6,182,212,0.07);
+      color: #9eeaff;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      padding: 80px 0 64px;
+      text-align: center;
+      position: relative;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 16px;
+      border: 1px solid rgba(168,85,247,0.4);
+      border-radius: 999px;
+      background: rgba(168,85,247,0.08);
+      color: #d8b4fe;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 28px;
+    }
+
+    .hero h1 {
+      font-size: clamp(2.2rem, 5vw, 4.2rem);
+      font-weight: 800;
+      line-height: 1.05;
+      letter-spacing: -0.06em;
+      margin-bottom: 20px;
+    }
+
+    .grad { background: linear-gradient(90deg, #7dd3fc, #a78bfa 45%, #c084fc 80%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+    .hero-sub {
+      font-size: 1.1rem;
+      color: var(--muted);
+      max-width: 600px;
+      margin: 0 auto 36px;
+      line-height: 1.7;
+    }
+
+    .hero-stats {
+      display: inline-flex;
+      gap: 32px;
+      padding: 20px 32px;
+      border: 1px solid var(--border-blue);
+      border-radius: 16px;
+      background: rgba(6,12,30,0.7);
+      backdrop-filter: blur(12px);
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .stat { text-align: center; }
+    .stat strong { display: block; font-size: 2rem; font-weight: 800; color: var(--cyan); line-height: 1; margin-bottom: 4px; }
+    .stat span { font-size: 0.78rem; color: var(--muted); }
+
+    /* ── SECTIONS ── */
+    section { padding: 64px 0; }
+
+    .section-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      margin-bottom: 14px;
+    }
+
+    .section-label::before { content: ""; display: block; width: 20px; height: 1px; background: var(--cyan); }
+
+    h2.section-title {
+      font-size: clamp(1.6rem, 3.5vw, 2.6rem);
+      font-weight: 800;
+      letter-spacing: -0.05em;
+      line-height: 1.1;
+      margin-bottom: 12px;
+    }
+
+    .section-desc {
+      font-size: 1rem;
+      color: var(--muted);
+      max-width: 560px;
+      line-height: 1.7;
+      margin-bottom: 48px;
+    }
+
+    /* ── DORES ── */
+    .dores-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .dor-card {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    .dor-left {
+      padding: 18px 20px;
+      background: rgba(239,68,68,0.06);
+      border-right: 1px solid var(--border);
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .dor-left::before {
+      content: "✗";
+      color: #f87171;
+      font-weight: 900;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .dor-right {
+      padding: 18px 20px;
+      background: rgba(34,197,94,0.05);
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .dor-right::before {
+      content: "✓";
+      color: var(--green);
+      font-weight: 900;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .dor-left p, .dor-right p { font-size: 0.84rem; color: var(--soft); line-height: 1.5; }
+
+    /* ROI BOX */
+    .roi-box {
+      margin-top: 40px;
+      padding: 28px 32px;
+      border: 1px solid rgba(249,115,22,0.4);
+      border-radius: 16px;
+      background: rgba(249,115,22,0.06);
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+
+    .roi-icon { font-size: 2.5rem; flex-shrink: 0; }
+
+    .roi-box h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 6px; }
+    .roi-box p { font-size: 0.88rem; color: var(--muted); line-height: 1.6; max-width: 620px; }
+    .roi-box strong { color: #fb923c; }
+
+    /* ── PACOTES ── */
+    .pacotes-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .pacote-card {
+      position: relative;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      overflow: hidden;
+      background: rgba(6,12,32,0.8);
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .pacote-card:hover {
+      transform: translateY(-4px);
+    }
+
+    .pacote-card.destaque {
+      border-color: rgba(168,85,247,0.6);
+      box-shadow: 0 0 40px rgba(168,85,247,0.15);
+    }
+
+    .pacote-top {
+      padding: 24px 24px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .pacote-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 14px;
+    }
+
+    .pacote-name {
+      font-size: 1.2rem;
+      font-weight: 800;
+      margin-bottom: 14px;
+    }
+
+    .pacote-price {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .price-setup {
+      font-size: 1.6rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .price-sep { color: var(--muted); font-size: 0.8rem; }
+
+    .price-mrr {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .pacote-indicado {
+      margin-top: 12px;
+      font-size: 0.76rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .pacote-items {
+      padding: 20px 24px 24px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .pacote-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 0.82rem;
+      color: var(--soft);
+      line-height: 1.5;
+    }
+
+    .pacote-item::before {
+      content: "→";
+      flex-shrink: 0;
+      font-size: 0.75rem;
+      margin-top: 1px;
+    }
+
+    .pacote-item.bold-item { color: var(--text); font-weight: 600; }
+    .pacote-item.bold-item::before { content: "◆"; font-size: 0.6rem; margin-top: 3px; }
+
+    .pacote-cta {
+      margin: 0 24px 24px;
+      display: block;
+      text-align: center;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: white;
+      transition: opacity 0.15s;
+    }
+
+    .pacote-cta:hover { opacity: 0.85; }
+
+    .sob-medida {
+      padding: 24px 28px;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      background: rgba(6,12,32,0.6);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+
+    .sob-medida h3 { font-size: 1rem; font-weight: 700; margin-bottom: 4px; }
+    .sob-medida p { font-size: 0.83rem; color: var(--muted); max-width: 560px; line-height: 1.6; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 11px 22px;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: white;
+      background: linear-gradient(135deg, var(--blue), var(--purple));
+      border: 1px solid rgba(255,255,255,0.1);
+      white-space: nowrap;
+      transition: opacity 0.15s, transform 0.15s;
+      cursor: pointer;
+    }
+
+    .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+    /* ── FLUXOS ── */
+    .fluxos-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+
+    .fluxo-card {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      background: rgba(6,12,32,0.7);
+    }
+
+    .fluxo-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .fluxo-icon {
+      width: 42px; height: 42px;
+      border-radius: 11px;
+      display: grid; place-items: center;
+      font-size: 1.2rem;
+      flex-shrink: 0;
+    }
+
+    .fluxo-title { font-size: 0.95rem; font-weight: 700; }
+
+    .fluxo-steps {
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .fluxo-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 8px 0;
+      position: relative;
+    }
+
+    .fluxo-step:not(:last-child)::after {
+      content: "";
+      position: absolute;
+      left: 11px;
+      top: 28px;
+      bottom: -8px;
+      width: 1px;
+      background: var(--border);
+    }
+
+    .step-dot {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      border: 2px solid;
+      display: grid; place-items: center;
+      font-size: 0.6rem;
+      font-weight: 800;
+      flex-shrink: 0;
+      background: var(--bg);
+      z-index: 1;
+    }
+
+    .step-text { font-size: 0.82rem; color: var(--soft); line-height: 1.5; padding-top: 2px; }
+
+    /* ── OBJEÇÕES ── */
+    .obj-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .obj-card {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    .obj-q {
+      padding: 14px 18px;
+      background: rgba(255,255,255,0.03);
+      border-bottom: 1px solid var(--border);
+      font-size: 0.84rem;
+      font-weight: 600;
+      color: #fbbf24;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .obj-q::before { content: "?"; flex-shrink: 0; width: 18px; height: 18px; border-radius: 50%; background: rgba(251,191,36,0.15); display: grid; place-items: center; font-size: 0.72rem; font-weight: 800; margin-top: 1px; }
+
+    .obj-a {
+      padding: 14px 18px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.6;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .obj-a::before { content: "→"; color: var(--green); flex-shrink: 0; font-weight: 700; }
+
+    /* ── CTA FINAL ── */
+    .cta-final {
+      margin: 48px 0 64px;
+      padding: 40px;
+      border: 1px solid rgba(0,184,122,0.4);
+      border-radius: 20px;
+      background:
+        radial-gradient(circle at 20% 50%, rgba(0,184,122,0.2), transparent 40%),
+        radial-gradient(circle at 80% 50%, rgba(59,130,246,0.15), transparent 40%),
+        rgba(4,10,26,0.8);
+      text-align: center;
+    }
+
+    .cta-final small {
+      display: block;
+      color: #6ee7b7;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    .cta-final h2 {
+      font-size: clamp(1.4rem, 3vw, 2.2rem);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      margin-bottom: 14px;
+    }
+
+    .cta-final p {
+      font-size: 0.95rem;
+      color: var(--muted);
+      max-width: 500px;
+      margin: 0 auto 28px;
+      line-height: 1.7;
+    }
+
+    .cta-actions { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+
+    .btn-green {
+      background: linear-gradient(135deg, #059669, #10b981);
+      box-shadow: 0 8px 28px rgba(16,185,129,0.3);
+    }
+
+    /* FOOTER */
+    .site-footer {
+      border-top: 1px solid var(--border);
+      padding: 24px 0;
+      text-align: center;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .site-footer strong { color: var(--green); }
+
+    /* RESPONSIVE */
+    @media (max-width: 860px) {
+      .dores-grid, .pacotes-grid, .fluxos-grid, .obj-grid { grid-template-columns: 1fr; }
+      .dor-card { grid-template-columns: 1fr; }
+      .dor-left { border-right: none; border-bottom: 1px solid var(--border); }
+      .hero-stats { gap: 20px; padding: 16px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="wrap">
+      <a href="/" class="logo">NCS<span>.</span>Studio</a>
+      <div class="header-badge">Proposta Exclusiva · Sob Medida</div>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <div class="wrap">
+    <div class="hero">
+      <div class="eyebrow">Automação · CRM · WhatsApp · Inteligência Artificial</div>
+      <h1>Seu Negócio Trabalhando<br><span class="grad">Enquanto Você Descansa</span></h1>
+      <p class="hero-sub">Reduzimos no-show, reativamos clientes inativos e automatizamos o atendimento — sem contratar mais ninguém.</p>
+      <div class="hero-stats">
+        <div class="stat"><strong>-60%</strong><span>Redução de no-show</span></div>
+        <div class="stat"><strong>+40%</strong><span>Receita de reativação</span></div>
+        <div class="stat"><strong>3x</strong><span>Mais atendimentos</span></div>
+        <div class="stat"><strong>2–3 sem</strong><span>Para implementar</span></div>
+      </div>
+    </div>
+
+    <!-- DORES -->
+    <section>
+      <div class="section-label">Diagnóstico</div>
+      <h2 class="section-title">O que está <span class="grad">custando dinheiro</span> na sua empresa hoje</h2>
+      <p class="section-desc">Cada linha abaixo é dinheiro perdido todo mês. A NCS-Studio resolve cada uma delas.</p>
+
+      <div class="dores-grid">
+        {dores.map(d => (
+          <div class="dor-card">
+            <div class="dor-left"><p>{d.dor}</p></div>
+            <div class="dor-right"><p>{d.solucao}</p></div>
+          </div>
+        ))}
+      </div>
+
+      <div class="roi-box">
+        <div class="roi-icon">💸</div>
+        <div>
+          <h3>Quanto sua empresa perde com no-show e faltas?</h3>
+          <p>Um negócio com <strong>5 no-shows/semana × R$300 ticket médio = R$6.000/mês perdido</strong>. Com ticket de R$700, a perda chega a <strong>R$14.000/mês</strong>. A automação da NCS-Studio resolve isso na primeira semana de operação.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- PACOTES -->
+    <section>
+      <div class="section-label">Investimento</div>
+      <h2 class="section-title">Escolha o pacote <span class="grad">ideal para o seu negócio</span></h2>
+      <p class="section-desc">Três níveis de automação para cada momento da sua operação. Todos com setup feito pela NCS-Studio.</p>
+
+      <div class="pacotes-grid">
+        {pacotes.map(p => (
+          <div class={`pacote-card${p.destaque ? ' destaque' : ''}`}>
+            {p.destaque && (
+              <div style={`position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,${p.cor},#ec4899)`}></div>
+            )}
+            <div class="pacote-top">
+              <div
+                class="pacote-badge"
+                style={`background:${p.cor}22;color:${p.cor};border:1px solid ${p.cor}44`}
+              >
+                {p.destaque ? '⭐ Mais escolhido' : p.nome}
+              </div>
+              <div class="pacote-name" style={`color:${p.cor}`}>{p.nome}</div>
+              <div class="pacote-price">
+                <span class="price-setup" style={`color:${p.cor}`}>{p.setup}</span>
+                <span class="price-sep">setup +</span>
+                <span class="price-mrr">{p.mrr}</span>
+              </div>
+              <p class="pacote-indicado">📍 {p.indicado}</p>
+            </div>
+            <div class="pacote-items">
+              {p.items.map((item, i) => (
+                <div class={`pacote-item${item.endsWith(':') ? ' bold-item' : ''}`}
+                  style={`--cor:${p.cor}`}>
+                  <span style={i === 0 && item.includes('Tudo') ? `color:${p.cor}` : ''}>{item}</span>
+                </div>
+              ))}
+            </div>
+            <a
+              class="pacote-cta"
+              href="#contato"
+              style={`background:linear-gradient(135deg,${p.cor}cc,${p.cor}88)`}
+            >
+              Quero este pacote →
+            </a>
+          </div>
+        ))}
+      </div>
+
+      <div class="sob-medida">
+        <div>
+          <h3>🔧 Sob Medida — a partir de R$12.000 setup + R$1.800/mês</h3>
+          <p>Para empresas com múltiplas unidades, franquias ou operações com sistema proprietário. Escopo negociado conforme número de unidades, colaboradores, integrações e compliance LGPD.</p>
+        </div>
+        <a class="btn" href="#contato">Falar sobre projeto →</a>
+      </div>
+    </section>
+
+    <!-- FLUXOS -->
+    <section>
+      <div class="section-label">Como funciona</div>
+      <h2 class="section-title">Automações que <span class="grad">trabalham por você</span></h2>
+      <p class="section-desc">Fluxos prontos e personalizados para a linguagem e a operação do seu negócio.</p>
+
+      <div class="fluxos-grid">
+        {fluxos.map(f => (
+          <div class="fluxo-card">
+            <div class="fluxo-header">
+              <div
+                class="fluxo-icon"
+                style={`background:${f.cor}18;border:1px solid ${f.cor}33`}
+              >
+                {f.icone}
+              </div>
+              <div class="fluxo-title">{f.titulo}</div>
+            </div>
+            <div class="fluxo-steps">
+              {f.steps.map((s, i) => (
+                <div class="fluxo-step">
+                  <div class="step-dot" style={`border-color:${f.cor};color:${f.cor}`}>{i + 1}</div>
+                  <p class="step-text">{s}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- OBJEÇÕES -->
+    <section>
+      <div class="section-label">Dúvidas frequentes</div>
+      <h2 class="section-title">Respostas para as <span class="grad">objeções mais comuns</span></h2>
+      <p class="section-desc">Entendemos suas dúvidas. Aqui estão as respostas diretas.</p>
+
+      <div class="obj-grid">
+        {objecoes.map(o => (
+          <div class="obj-card">
+            <div class="obj-q">{o.obj}</div>
+            <div class="obj-a">{o.resp}</div>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- CTA FINAL -->
+    <div class="cta-final" id="contato">
+      <small>Próximo passo</small>
+      <h2>Pronto para parar de perder clientes e dinheiro?</h2>
+      <p>Fale com a NCS-Studio agora. Em 2–3 semanas seu negócio já terá confirmação automática, reativação e IA funcionando.</p>
+      <div class="cta-actions">
+        <a class="btn btn-green" href="https://wa.me/554898233534" target="_blank">
+          💬 Falar no WhatsApp
+        </a>
+        <a class="btn" href="mailto:hello@ncs.studio">
+          ✉ Enviar e-mail
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <strong>NCS-Studio</strong> · Automação, CRM e Atendimento Inteligente · © {ano}
+  </footer>
+
+</body>
+</html>
