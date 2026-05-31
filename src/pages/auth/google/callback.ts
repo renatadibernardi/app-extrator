@@ -9,13 +9,10 @@ import {
   signValue,
   verifySignedValue
 } from '../../../lib/google-session';
-import { setGoogleRuntimeEnv } from '../../../lib/runtime-env';
 
 export const prerender = false;
 
-export const GET: APIRoute = async ({ request, cookies, locals }) => {
-  setGoogleRuntimeEnv(locals);
-
+export const GET: APIRoute = async ({ request, cookies }) => {
   const url = new URL(request.url);
   const error = url.searchParams.get('error');
   const code = url.searchParams.get('code');

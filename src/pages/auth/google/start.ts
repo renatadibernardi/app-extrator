@@ -12,13 +12,10 @@ import {
   isHttpsRequest,
   signValue
 } from '../../../lib/google-session';
-import { setGoogleRuntimeEnv } from '../../../lib/runtime-env';
 
 export const prerender = false;
 
-export const GET: APIRoute = async ({ request, cookies, locals }) => {
-  setGoogleRuntimeEnv(locals);
-
+export const GET: APIRoute = async ({ request, cookies }) => {
   const clientId = getGoogleOAuthClientId();
   if (!clientId) {
     return new Response(JSON.stringify({ ok: false, error: 'Defina GOOGLE_OAUTH_CLIENT_ID para autenticar.' }), {
