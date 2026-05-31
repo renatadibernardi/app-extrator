@@ -2,7 +2,7 @@
 export const prerender = true;
 
 const GOOGLE_OAUTH_CLIENT_ID = import.meta.env.PUBLIC_GOOGLE_OAUTH_CLIENT_ID || '';
-const EXTRATOR_API_URL = import.meta.env.PUBLIC_EXTRATOR_API_URL || 'https://app-extrator-api.dibernardi81.workers.dev';
+const EXTRATOR_API_URL = import.meta.env.PUBLIC_EXTRATOR_API_URL || 'https://app-extrator-api.dibernardi.workers.dev';
 const BASE_PATH = import.meta.env.BASE_URL.replace(/\/$/, '');
 const appUrl = (pathname: string) => `${BASE_PATH}${pathname}`;
 ---

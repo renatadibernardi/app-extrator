@@ -5,6 +5,7 @@
   "main": "src/index.ts",
   "compatibility_date": "2026-05-31",
   "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
   "containers": [
     {
       "max_instances": 1,
